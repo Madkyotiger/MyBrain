@@ -1,0 +1,41 @@
+{
+  "schema_version": "mybrain-cn-data-policy-v1",
+  "default_storage": "local-pglite-plus-private-git",
+  "default_external_model_for_personal_private": "off",
+  "enterprise_mode": "out-of-scope-p0",
+  "classes": [
+    {
+      "id": "public",
+      "default": "allow",
+      "external_model": "allow-with-source"
+    },
+    {
+      "id": "personal_private",
+      "default": "allow-local",
+      "external_model": "explicit-opt-in"
+    },
+    {
+      "id": "work_authorized",
+      "default": "conditional-separate-source",
+      "external_model": "policy-and-explicit-authorization"
+    },
+    {
+      "id": "org_restricted",
+      "default": "blocked",
+      "external_model": "blocked"
+    },
+    {
+      "id": "client_or_secret",
+      "default": "blocked",
+      "external_model": "blocked"
+    }
+  ],
+  "required_controls": [
+    "source-provenance",
+    "source-separation",
+    "deletion-path",
+    "export-path",
+    "credential-exclusion",
+    "external-model-visibility"
+  ]
+}

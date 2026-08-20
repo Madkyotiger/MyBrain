@@ -1,0 +1,105 @@
+api_version: gbrain-schema-pack-v1
+name: mybrain-cn-executive
+version: 0.1.0
+gbrain_min_version: 0.46.24
+extends: gbrain-base-v2
+description: Executive personal-brain overlay for Chinese and bilingual professional work.
+borrow_from: []
+
+page_types:
+  - name: meeting
+    primitive: temporal
+    path_prefixes:
+      - meetings/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+  - name: decision
+    primitive: concept
+    path_prefixes:
+      - decisions/
+    aliases:
+      - decision-record
+      - judgment
+    extractable: false
+    expert_routing: false
+
+  - name: commitment
+    primitive: temporal
+    path_prefixes:
+      - commitments/
+    aliases:
+      - promise
+      - follow-up
+    extractable: false
+    expert_routing: false
+
+  - name: brief
+    primitive: media
+    path_prefixes:
+      - briefs/
+    aliases:
+      - project-brief
+      - meeting-brief
+    extractable: true
+    expert_routing: false
+
+  - name: signal
+    primitive: annotation
+    path_prefixes:
+      - signals/
+    aliases:
+      - weak-signal
+      - observation
+    extractable: true
+    expert_routing: false
+
+link_types:
+  - name: decided_in
+    inverse: contains_decision
+  - name: committed_by
+    inverse: made_commitment
+  - name: commitment_for
+    inverse: has_commitment
+  - name: concerns
+    inverse: concerned_by
+  - name: owned_by
+    inverse: owns
+  - name: informs
+    inverse: informed_by
+
+filing_rules:
+  - kind: meeting
+    directory: meetings/
+    examples:
+      - meetings/2026-08-18-project-review
+    description: Meeting context, decisions, commitments, changes, and open questions.
+  - kind: decision
+    directory: decisions/
+    examples:
+      - decisions/2026-08-18-channel-priority
+    description: Decision, evidence, assumptions, owner, date, and reversal condition.
+  - kind: commitment
+    directory: commitments/
+    examples:
+      - commitments/2026-08-18-proposal-follow-up
+    description: Explicit promise with owner, counterpart, due date, source, and status.
+  - kind: brief
+    directory: briefs/
+    examples:
+      - briefs/2026-08-18-meeting-prep
+    description: Decision-ready synthesis with sources, unknowns, and next move.
+  - kind: signal
+    directory: signals/
+    examples:
+      - signals/2026-08-18-category-shift
+    description: Observable change that may alter a decision; not yet a conclusion.
+
+frontmatter_links: []
+enrichable_types: []
+takes_kinds:
+  - fact
+  - take
+  - bet
+  - hunch

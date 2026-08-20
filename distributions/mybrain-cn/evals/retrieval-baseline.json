@@ -1,0 +1,106 @@
+{
+  "schema_version": "mybrain-cn-retrieval-baseline-v1",
+  "description": "Synthetic corpus only. No real people, companies, clients, or private paths.",
+  "default_source": "default",
+  "pages": [
+    {
+      "slug": "people/lin-yue-example",
+      "type": "person",
+      "title": "林越",
+      "body": "远山科技品牌负责人。负责品牌升级与季度评审。",
+      "aliases": [
+        "Lynn Lin",
+        "林总"
+      ]
+    },
+    {
+      "slug": "companies/yuanshan-example",
+      "type": "company",
+      "title": "远山科技 YuanShan Tech",
+      "body": "一家合成的消费科技公司，正在推进 brand refresh。",
+      "aliases": [
+        "YuanShan",
+        "远山"
+      ]
+    },
+    {
+      "slug": "meetings/2026-08-18-yuanshan-example",
+      "type": "meeting",
+      "title": "远山科技 Q3 品牌评审",
+      "body": "林越确认下周提交品牌叙事初稿。预算审批仍待财务负责人确认。",
+      "aliases": []
+    }
+  ],
+  "isolated_sources": [
+    {
+      "source_id": "restricted-example",
+      "pages": [
+        {
+          "slug": "notes/restricted-budget-example",
+          "type": "note",
+          "title": "受限预算样例",
+          "body": "严格保密预算仅用于 source 隔离测试。",
+          "aliases": []
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "cjk-short-name",
+      "query": "林越",
+      "expect_any": [
+        "people/lin-yue-example"
+      ]
+    },
+    {
+      "id": "english-alias-to-cjk",
+      "query": "Lynn Lin",
+      "expect_any": [
+        "people/lin-yue-example"
+      ]
+    },
+    {
+      "id": "cjk-organization",
+      "query": "远山科技",
+      "expect_any": [
+        "companies/yuanshan-example"
+      ]
+    },
+    {
+      "id": "mixed-language",
+      "query": "远山科技 brand refresh",
+      "expect_any": [
+        "companies/yuanshan-example"
+      ]
+    },
+    {
+      "id": "cjk-body-phrase",
+      "query": "预算审批",
+      "expect_any": [
+        "meetings/2026-08-18-yuanshan-example"
+      ]
+    },
+    {
+      "id": "source-isolation-default",
+      "query": "严格保密预算",
+      "source_id": "default",
+      "expect_none": [
+        "notes/restricted-budget-example"
+      ]
+    },
+    {
+      "id": "source-isolation-explicit",
+      "query": "严格保密预算",
+      "source_id": "restricted-example",
+      "expect_any": [
+        "notes/restricted-budget-example"
+      ]
+    },
+    {
+      "id": "negative-control",
+      "query": "不存在的海王星预算",
+      "expect_empty": true
+    }
+  ]
+}

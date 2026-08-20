@@ -1,0 +1,94 @@
+{
+  "schema_version": "mybrain-cn-acceptance-v1",
+  "p0": [
+    {
+      "id": "P0-01",
+      "status": "pass",
+      "evidence": "PRODUCT_CONTRACT.md"
+    },
+    {
+      "id": "P0-02",
+      "status": "pass",
+      "evidence": "UPSTREAM_DELTA.md and git ancestry"
+    },
+    {
+      "id": "P0-03",
+      "status": "pass",
+      "evidence": "overlay-only changed-path guard"
+    },
+    {
+      "id": "P0-04",
+      "status": "pass",
+      "evidence": "DATA_CLASSIFICATION.md and data-policy.json"
+    },
+    {
+      "id": "P0-05",
+      "status": "pass",
+      "evidence": "chinese-retrieval-baseline.test.ts"
+    },
+    {
+      "id": "P0-06",
+      "status": "pass",
+      "evidence": "validate-p0.ts"
+    }
+  ],
+  "phase1_entry": [
+    {
+      "id": "P1-OWNER",
+      "status": "blocked",
+      "decision": "name technical owner"
+    },
+    {
+      "id": "P1-PILOTS",
+      "status": "pending",
+      "decision": "name at least two target users"
+    },
+    {
+      "id": "P1-RUNTIME",
+      "status": "pending",
+      "decision": "choose one default onboarding runtime"
+    }
+  ],
+  "mvp": [
+    {
+      "id": "MVP-01",
+      "status": "pending",
+      "outcome": "fresh-session memory round-trip"
+    },
+    {
+      "id": "MVP-02",
+      "status": "pending",
+      "outcome": "two hero loops repeat in real use"
+    },
+    {
+      "id": "MVP-03",
+      "status": "pending",
+      "outcome": "Chinese and bilingual retrieval stable"
+    },
+    {
+      "id": "MVP-04",
+      "status": "pending",
+      "outcome": "sources and unknowns visible"
+    },
+    {
+      "id": "MVP-05",
+      "status": "pending",
+      "outcome": "correction persists across sessions"
+    },
+    {
+      "id": "MVP-06",
+      "status": "pending",
+      "outcome": "blocked data stays out"
+    },
+    {
+      "id": "MVP-07",
+      "status": "pending",
+      "outcome": "non-founder operator can install and recover"
+    },
+    {
+      "id": "MVP-08",
+      "status": "pending",
+      "outcome": "upstream update keeps P0 gate green"
+    }
+  ]
+}

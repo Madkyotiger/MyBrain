@@ -1,0 +1,58 @@
+{
+  "schema_version": "mybrain-cn-p0-v1",
+  "status": "p0-candidate",
+  "generated_on": "2026-08-21",
+  "upstream": {
+    "repository": "https://github.com/garrytan/gbrain.git",
+    "branch": "master",
+    "base_commit": "b99f4c8b07780d2469608b03c7c301bd2beef271"
+  },
+  "fork": {
+    "repository": "https://github.com/Madkyotiger/MyBrain.git",
+    "branch": "master",
+    "allowed_delta_prefixes": [
+      "distributions/mybrain-cn/"
+    ]
+  },
+  "product": {
+    "primary_user": "China-based senior brand, marketing, advertising, consulting, or professional-services leader",
+    "promise": "A private professional brain that restores sourced context across sessions and exposes what is missing.",
+    "hero_loops": [
+      "meeting-prep",
+      "project-judgment",
+      "weekly-judgment-evolution"
+    ],
+    "mvp_skills": [
+      "source-grounded-recall",
+      "meeting-prep",
+      "project-brief",
+      "decision-journal",
+      "commitment-tracker",
+      "relationship-context",
+      "weekly-evolution",
+      "correction-loop"
+    ]
+  },
+  "architecture": {
+    "core_owner": "garrytan/gbrain",
+    "distribution_owner": "Madkyotiger/MyBrain:distributions/mybrain-cn",
+    "user_data_owner": "each user's private brain",
+    "core_policy": "overlay-first"
+  },
+  "required_files": [
+    "README.md",
+    "PRODUCT_CONTRACT.md",
+    "ARCHITECTURE.md",
+    "DATA_CLASSIFICATION.md",
+    "UPSTREAM_DELTA.md",
+    "MVP_ACCEPTANCE.md",
+    "data-policy.json",
+    "mvp-acceptance.json",
+    "schema-packs/mybrain-cn-executive/pack.yaml",
+    "evals/retrieval-baseline.json",
+    "tests/p0-contract.test.ts",
+    "tests/chinese-retrieval-baseline.test.ts",
+    "scripts/validate-p0.ts",
+    "package.json"
+  ]
+}

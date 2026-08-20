@@ -1,0 +1,10 @@
+{
+  "name": "@mybrain/cn-p0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "bun scripts/validate-p0.ts",
+    "test": "bun test tests",
+    "p0": "bun run validate && bun run test"
+  }
+}
