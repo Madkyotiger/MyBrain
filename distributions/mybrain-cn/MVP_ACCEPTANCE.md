@@ -17,7 +17,7 @@
 | RC-07 | 备份校验与隔离恢复 | PASS |
 | RC-08 | WorkBuddy、DeepSeek Harness、Feishu Aily Adapter 边界 | PASS |
 | RC-09 | Core 未被中国发行版逻辑污染，发行版差异留在 overlay | PASS |
-| RC-10 | typecheck、root verify、发行版 release gate 与 full-history fresh clone | 待最终发布回执 |
+| RC-10 | typecheck、root verify、发行版 release gate 与 full-history fresh clone | PASS |
 
 ## 宿主声明
 
