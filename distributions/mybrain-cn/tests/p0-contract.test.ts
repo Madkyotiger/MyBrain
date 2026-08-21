@@ -5,7 +5,7 @@ describe('@MyBrain P0 contract', () => {
   test('all contract, boundary, schema, privacy, and upstream guards pass', () => {
     const receipt = validateP0();
     expect(receipt.status).toBe('pass');
-    expect(receipt.required_files).toBe(14);
+    expect(receipt.required_files).toBe(15);
     expect(receipt.data_classes).toBe(5);
     expect(receipt.eval_cases).toBe(8);
     expect(receipt.schema_pack).toBe('mybrain-cn-executive@0.1.0');

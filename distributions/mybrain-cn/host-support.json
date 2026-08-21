@@ -1,0 +1,44 @@
+{
+  "schema_version": "mybrain-cn-host-support-v1",
+  "bootstrap_owner": "gbrain-native",
+  "support": {
+    "codex": {
+      "deployment": "automatic",
+      "wiring": "gbrain-native",
+      "release_status": "supported",
+      "target_live_check": "gbrain bootstrap verify"
+    },
+    "hermes": {
+      "deployment": "conditional-agent-driven",
+      "wiring": "mybrain-adapter",
+      "release_status": "supported-with-target-validation",
+      "target_live_check": "terminal pwd equals the product checkout, then hermes mcp test mybrain",
+      "manual_prerequisite": "If the active profile pins terminal.cwd elsewhere, set terminal.cwd to the product checkout and start a new session."
+    },
+    "workbuddy": {
+      "deployment": "automatic-agent-driven",
+      "wiring": "mybrain-adapter",
+      "release_status": "candidate-with-target-validation",
+      "target_live_check": "codebuddy mcp get mybrain"
+    },
+    "deepseek-harness": {
+      "deployment": "guided",
+      "wiring": "mybrain-adapter",
+      "release_status": "developer-preview",
+      "target_live_check": "dsh --profile web --dump-config plus one real MCP call",
+      "manual_prerequisite": "Place product checkout and user workspace under an explicitly approved deployment parent because workspace-write may block external paths."
+    },
+    "feishu-aily": {
+      "deployment": "manual",
+      "wiring": "https-registration-handoff",
+      "release_status": "registration-only",
+      "target_live_check": "tenant authentication, permissions, audit, residency, and remote MCP round-trip"
+    },
+    "doubao-desktop": {
+      "deployment": "unsupported",
+      "wiring": "none",
+      "release_status": "unsupported-until-official-interface",
+      "target_live_check": null
+    }
+  }
+}

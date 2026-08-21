@@ -11,6 +11,7 @@
     "allowed_delta_prefixes": [
       "README.md",
       "AGENTS.md",
+      ".github/CODEOWNERS",
       "package.json",
       "distributions/mybrain-cn/"
     ]
@@ -55,15 +56,29 @@
       "BOOTSTRAP_FOR_AGENTS.md",
       "gbrain bootstrap status"
     ],
-    "automatic_hosts": [
+    "agent_driven_hosts": [
+      "claude-code",
+      "codex",
+      "opencode",
+      "workbuddy"
+    ],
+    "conditional_agent_driven_hosts": [
+      "hermes"
+    ],
+    "native_wire_hosts": [
       "claude-code",
       "codex",
       "opencode"
     ],
-    "post_bootstrap_hosts": [
+    "adapter_hosts": [
       "hermes",
       "workbuddy",
-      "deepseek-harness",
+      "deepseek-harness"
+    ],
+    "guided_hosts": [
+      "deepseek-harness"
+    ],
+    "manual_hosts": [
       "feishu-aily"
     ],
     "unsupported_hosts": [
@@ -87,6 +102,8 @@
       "src/deepseek-harness-adapter.ts",
       "src/feishu-aily-handoff.ts",
       "DEPLOY_FOR_AGENTS.md",
+      "AGENT_HOSTS.md",
+      "host-support.json",
       "tests/helpers/native-bootstrap-fixture.ts",
       "tests/p1-unit.test.ts",
       "tests/p1-e2e.serial.test.ts",
@@ -104,6 +121,7 @@
     "README.md",
     "BOOTSTRAP_FOR_AGENTS.md",
     "AGENT_HOSTS.md",
+    "host-support.json",
     "OPERATOR_RUNBOOK.md",
     "MVP_ACCEPTANCE.md",
     "data-policy.json",
