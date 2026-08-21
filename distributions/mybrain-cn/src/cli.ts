@@ -6,12 +6,11 @@ import { intakeFile, type DataClass } from './intake.ts';
 import { configureHermesAdapter } from './hermes-adapter.ts';
 import { configureWorkBuddyAdapter } from './workbuddy-adapter.ts';
 import { configureDeepSeekHarnessAdapter } from './deepseek-harness-adapter.ts';
-import { createDoubaoWorkHandoff } from './doubao-work-handoff.ts';
-import { initializeMyBrain, loadAnswers, onboardingPlan } from './onboarding.ts';
+import { createFeishuAilyHandoff } from './feishu-aily-handoff.ts';
+import { activateMyBrain, verifyMyBrain } from './activation.ts';
 import { runGbrain } from './gbrain-runtime.ts';
-import { runTerminalOnboarding } from './interactive-onboarding.ts';
 
-const HELP = `@MyBrain P1.2\n\nUsage:\n  mybrain-cn onboard [--force]\n  mybrain-cn plan --answers <json> --workspace <abs> --state-root <abs>\n  mybrain-cn init --answers <json> --workspace <abs> --state-root <abs> --confirm-hash <sha256> [--hermes-config <abs> | --workbuddy-config <abs> | --deepseek-harness-patch <abs>] [--force]\n  mybrain-cn runtime hermes --config <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn runtime workbuddy --config <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn runtime deepseek-harness --patch <abs> --workspace <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn runtime doubao-work --url <https-url> --output <abs> [--auth-header Authorization]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> --source-id <id> [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs>\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nP1.2 defaults: explicit confirmations, local PGLite, bounded MEMORY_VERBS, explicit-source intake, blocked restricted/client-secret data. 豆包工作伙伴仅生成远程 MCP 登记交接，不部署远程服务。\n`;
+const HELP = `@MyBrain CN\n\nPrimary bootstrap:\n  Follow distributions/mybrain-cn/BOOTSTRAP_FOR_AGENTS.md. GBrain native bootstrap owns preflight, engine, interview, render, skills, harness wiring, repo, and verify.\n\nDistribution commands:\n  mybrain-cn activate --workspace <abs> --state-root <abs> [--force]\n  mybrain-cn verify --workspace <abs> --state-root <abs>\n  mybrain-cn runtime hermes --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime workbuddy --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime deepseek-harness --patch <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime feishu-aily --url <https-url> --output <abs> [--auth-header Authorization]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> [--source-id <native-id>] [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs>\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nAutomatic native bootstrap hosts: Claude Code, Codex, and opencode. Hermes, WorkBuddy, and DeepSeek Harness attach after native bootstrap. Feishu Aily uses a remote MCP registration handoff. Doubao Desktop is not claimed until an official extension/MCP interface is available.\n`;
 
 function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -27,26 +26,20 @@ async function main(): Promise<void> {
   const gbrainCli = values.get('--gbrain-cli');
 
   switch (command) {
-    case 'onboard': {
-      output(await runTerminalOnboarding({ gbrainCli, force: booleans.has('--force') }));
-      return;
-    }
-    case 'plan': {
-      const answers = loadAnswers(requiredFlag(values, '--answers'));
-      output(onboardingPlan(answers, requiredFlag(values, '--workspace'), requiredFlag(values, '--state-root')));
-      return;
-    }
-    case 'init': {
-      output(initializeMyBrain({
-        answersPath: requiredFlag(values, '--answers'),
+    case 'activate': {
+      output(activateMyBrain({
         workspace: requiredFlag(values, '--workspace'),
         stateRoot: requiredFlag(values, '--state-root'),
-        confirmationHash: requiredFlag(values, '--confirm-hash'),
-        hermesConfig: values.get('--hermes-config'),
-        workbuddyConfig: values.get('--workbuddy-config'),
-        deepseekHarnessPatch: values.get('--deepseek-harness-patch'),
         gbrainCli,
         force: booleans.has('--force'),
+      }));
+      return;
+    }
+    case 'verify': {
+      output(verifyMyBrain({
+        workspace: requiredFlag(values, '--workspace'),
+        stateRoot: requiredFlag(values, '--state-root'),
+        gbrainCli,
       }));
       return;
     }
@@ -55,26 +48,28 @@ async function main(): Promise<void> {
       if (runtime === 'hermes') {
         output(configureHermesAdapter({
           configPath: requiredFlag(values, '--config'), stateRoot: requiredFlag(values, '--state-root'),
-          sourceId: values.get('--source-id') ?? 'default', gbrainCli, force: booleans.has('--force'),
+          workspace: requiredFlag(values, '--workspace'), sourceId: values.get('--source-id'),
+          gbrainCli, force: booleans.has('--force'),
         }));
       } else if (runtime === 'workbuddy') {
         output(configureWorkBuddyAdapter({
           configPath: requiredFlag(values, '--config'), stateRoot: requiredFlag(values, '--state-root'),
-          sourceId: values.get('--source-id') ?? 'default', gbrainCli, force: booleans.has('--force'),
+          workspace: requiredFlag(values, '--workspace'), sourceId: values.get('--source-id'),
+          gbrainCli, force: booleans.has('--force'),
         }));
       } else if (runtime === 'deepseek-harness') {
         output(configureDeepSeekHarnessAdapter({
           patchPath: requiredFlag(values, '--patch'), workspace: requiredFlag(values, '--workspace'),
-          stateRoot: requiredFlag(values, '--state-root'), sourceId: values.get('--source-id') ?? 'default',
+          stateRoot: requiredFlag(values, '--state-root'), sourceId: values.get('--source-id'),
           gbrainCli, force: booleans.has('--force'),
         }));
-      } else if (runtime === 'doubao-work') {
-        output(createDoubaoWorkHandoff({
+      } else if (runtime === 'feishu-aily') {
+        output(createFeishuAilyHandoff({
           endpointUrl: requiredFlag(values, '--url'), outputPath: requiredFlag(values, '--output'),
           authHeader: values.get('--auth-header'),
         }));
       } else {
-        throw new Error('Supported runtime targets: hermes, workbuddy, deepseek-harness, doubao-work.');
+        throw new Error('Supported runtime targets: hermes, workbuddy, deepseek-harness, feishu-aily.');
       }
       return;
     }
@@ -83,7 +78,7 @@ async function main(): Promise<void> {
         inputPath: requiredFlag(values, '--file'),
         workspace: requiredFlag(values, '--workspace'),
         dataClass: requiredFlag(values, '--class') as DataClass,
-        sourceId: requiredFlag(values, '--source-id'),
+        sourceId: values.get('--source-id'),
         stateRoot: values.get('--state-root'),
         sync: booleans.has('--sync'),
         gbrainCli,

@@ -1,50 +1,40 @@
 {
-  "schema_version": "mybrain-cn-acceptance-v3",
+  "schema_version": "mybrain-cn-acceptance-release-v1",
   "p0": [
-    { "id": "P0-01", "status": "pass", "evidence": "PRODUCT_CONTRACT.md" },
-    { "id": "P0-02", "status": "pass", "evidence": "UPSTREAM_DELTA.md and git ancestry" },
-    { "id": "P0-03", "status": "pass", "evidence": "overlay-only changed-path guard" },
-    { "id": "P0-04", "status": "pass", "evidence": "DATA_CLASSIFICATION.md and data-policy.json" },
-    { "id": "P0-05", "status": "pass", "evidence": "chinese-retrieval-baseline.test.ts" },
-    { "id": "P0-06", "status": "pass", "evidence": "validate-p0.ts" }
+    { "id": "P0-01", "status": "pass", "proof": "product contract" },
+    { "id": "P0-02", "status": "pass", "proof": "overlay boundary" },
+    { "id": "P0-03", "status": "pass", "proof": "five-class data policy" },
+    { "id": "P0-04", "status": "pass", "proof": "Executive schema pack" },
+    { "id": "P0-05", "status": "pass", "proof": "Chinese and bilingual retrieval baseline" },
+    { "id": "P0-06", "status": "pass", "proof": "executable validation gate" }
   ],
   "phase1_entry": [
-    { "id": "P1-OWNER", "status": "pass", "decision": "named product owner remains accountable; MK is builder/operator" },
-    { "id": "P1-RUNTIME", "status": "pass", "decision": "Hermes-first; GBrain remains runtime-neutral through MCP" },
-    { "id": "P1-SUPPORT", "status": "deferred", "decision": "name non-founder support owner before P2 multi-user pilot" },
-    { "id": "P1-PILOTS", "status": "deferred", "decision": "two real target users are a P2 entry gate, not a P1 build gate" }
+    { "id": "P1-OWNER", "status": "pass", "proof": "accountable owner is held in the private control plane" },
+    { "id": "P1-SUPPORT", "status": "deferred", "proof": "named non-founder support owner is required before multi-user pilot" }
   ],
-  "p1_build": [
-    { "id": "P1-01", "status": "pass", "outcome": "fresh isolated install creates PGLite, schema, skills, and runtime adapter" },
-    { "id": "P1-02", "status": "pass", "outcome": "actual stdio MCP endpoint conforms to MEMORY_VERBS v1" },
-    { "id": "P1-03", "status": "pass", "outcome": "explicit private intake powers a sourced Chinese meeting-prep loop" },
-    { "id": "P1-04", "status": "pass", "outcome": "restricted and client-secret classes are blocked before staging" },
-    { "id": "P1-05", "status": "pass", "outcome": "correction persists across fresh process readback" },
-    { "id": "P1-06", "status": "pass", "outcome": "checksum backup and isolated restore retain pages and corrections" }
+  "release_build": [
+    { "id": "RC-01", "status": "pass", "proof": "GBrain native bootstrap is the only identity and install path" },
+    { "id": "RC-02", "status": "pass", "proof": "native interview state and confirmation hash are reused" },
+    { "id": "RC-03", "status": "pass", "proof": "activation requires native render" },
+    { "id": "RC-04", "status": "pass", "proof": "parallel onboard, plan, init, answers, and static profile are absent" },
+    { "id": "RC-05", "status": "pass", "proof": "intake follows agent.json source and fails closed" },
+    { "id": "RC-06", "status": "pass", "proof": "MCP, meeting prep, and cross-process correction tests" },
+    { "id": "RC-07", "status": "pass", "proof": "checksum backup and isolated restore tests" },
+    { "id": "RC-08", "status": "pass", "proof": "post-bootstrap host adapter tests" },
+    { "id": "RC-09", "status": "pass", "proof": "distribution changes remain bounded to the overlay and public README" }
   ],
-  "p1_1_build": [
-    { "id": "P1.1-01", "status": "pass", "outcome": "three confirmed rounds and final full readback" },
-    { "id": "P1.1-02", "status": "pass", "outcome": "answers and plan precede a separate exact install confirmation" },
-    { "id": "P1.1-03", "status": "pass", "outcome": "non-interactive, missing, invalid, and unconfirmed input fail closed" },
-    { "id": "P1.1-04", "status": "pass", "outcome": "public Hermes profile is user-data-free and contains the existing eight skills" },
-    { "id": "P1.1-05", "status": "pass", "outcome": "current Hermes local-directory profile install semantics pass in isolation" },
-    { "id": "P1.1-06", "status": "pass", "outcome": "operator runbook and blank four-scenario human acceptance protocol exist" }
-  ],
-  "p1_2_build": [
-    { "id": "P1.2-01", "status": "pass", "outcome": "public README and repository description use @MyBrain identity while retaining upstream attribution" },
-    { "id": "P1.2-02", "status": "pass-automated", "outcome": "WorkBuddy JSONC adapter preserves unrelated config and writes bounded stdio MCP" },
-    { "id": "P1.2-03", "status": "pass-automated-preview", "outcome": "DeepSeek Harness patch adapter uses the official MCP client structure; live preview client not run" },
-    { "id": "P1.2-04", "status": "pass-handoff", "outcome": "Doubao Work handoff rejects unsafe endpoints and contains no credential or remote deployment claim" },
-    { "id": "P1.2-05", "status": "pending-live-clients", "outcome": "real WorkBuddy, DeepSeek Harness, and Doubao Work account round-trips" }
+  "human_validation": [
+    { "id": "HA-01", "status": "not-run", "scenario": "Day 1 real meeting preparation" },
+    { "id": "HA-02", "status": "not-run", "scenario": "correction read back in a new session" },
+    { "id": "HA-03", "status": "not-run", "scenario": "Day 7 repeated use" },
+    { "id": "HA-04", "status": "not-run", "scenario": "non-developer install or restore" },
+    { "id": "HA-05", "status": "not-run", "scenario": "live mainland client account round-trip" }
   ],
   "mvp": [
-    { "id": "MVP-01", "status": "pass-synthetic", "outcome": "fresh-session memory round-trip" },
-    { "id": "MVP-02", "status": "pending-real-use", "outcome": "two hero loops repeat in real use" },
-    { "id": "MVP-03", "status": "pass", "outcome": "Chinese and bilingual retrieval stable" },
-    { "id": "MVP-04", "status": "pass", "outcome": "sources and unknowns visible" },
-    { "id": "MVP-05", "status": "pass-synthetic", "outcome": "correction persists across sessions" },
-    { "id": "MVP-06", "status": "pass", "outcome": "blocked data stays out" },
-    { "id": "MVP-07", "status": "pending-human", "outcome": "non-founder operator can install and recover" },
-    { "id": "MVP-08", "status": "pending-release-gate", "outcome": "upstream update keeps P0 gate green" }
+    { "id": "MVP-01", "status": "not-run", "proof": "real Executive Day 1" },
+    { "id": "MVP-02", "status": "not-run", "proof": "real cross-session correction" },
+    { "id": "MVP-03", "status": "not-run", "proof": "real Day 7 repeat" },
+    { "id": "MVP-04", "status": "not-run", "proof": "independent install and recovery" },
+    { "id": "MVP-05", "status": "not-run", "proof": "live client attachment" }
   ]
 }

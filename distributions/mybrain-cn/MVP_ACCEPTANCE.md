@@ -1,59 +1,46 @@
-# P0 / P1 / P1.1 / P1.2 验收
+# @MyBrain CN Release Acceptance
 
-## P0：方向与边界
+## 发布判断
 
-| ID | 验收项 | 状态 | 证据 |
+当前状态：**release candidate**。工程门禁证明主入口、边界和恢复机制一致；它不替代真人使用证明。
+
+## 自动化门禁
+
+| ID | 要求 | 当前状态 |
+|---|---|---|
+| RC-01 | GBrain 原生 Bootstrap 是唯一身份与安装主链路 | PASS |
+| RC-02 | 原生 Interview 状态与 confirmation hash 被发行版复用 | PASS |
+| RC-03 | 原生 Render 后才能激活 Executive Schema 与 8 Skills | PASS |
+| RC-04 | 旧 `onboard / plan / init`、自建 answers 与静态 Hermes Profile 不存在 | PASS |
+| RC-05 | 资料导入服从 `agent.json.source_id`，高风险数据 fail-closed | PASS |
+| RC-06 | stdio MCP 七动词合同、会前准备与跨进程纠正 | PASS |
+| RC-07 | 备份校验与隔离恢复 | PASS |
+| RC-08 | WorkBuddy、DeepSeek Harness、Feishu Aily Adapter 边界 | PASS |
+| RC-09 | Core 未被中国发行版逻辑污染，发行版差异留在 overlay | PASS |
+| RC-10 | typecheck、root verify、发行版 release gate 与 full-history fresh clone | 待最终发布回执 |
+
+## 宿主声明
+
+- Claude Code、Codex、opencode：GBrain 原生自动 Bootstrap。
+- Hermes、WorkBuddy、DeepSeek Harness：Bootstrap 后接入，不声称能单独触发自动 Onboarding。
+- Feishu Aily：只生成远程 MCP 登记交接。
+- 豆包桌面版 / 豆包工作：尚无已验证官方接入接口，不宣称支持。
+
+## 真人验收
+
+| ID | 场景 | PASS 标准 | 状态 |
 |---|---|---|---|
-| P0-01 | 用户、承诺、非目标与反转条件明确 | PASS | `PRODUCT_CONTRACT.md` |
-| P0-02 | 上游基线与 fork 差异可追溯 | PASS | `UPSTREAM_DELTA.md` + Git ancestry |
-| P0-03 | overlay/core 边界可执行 | PASS | changed-path validator |
-| P0-04 | 数据分级与禁入规则明确 | PASS | `DATA_CLASSIFICATION.md` + `data-policy.json` |
-| P0-05 | 中文/双语检索基线真实运行 | PASS | `tests/chinese-retrieval-baseline.test.ts` |
-| P0-06 | P0 合同可机器验证 | PASS | `scripts/validate-p0.ts` |
+| HA-01 | Day 1 会前准备 | 来源准确，未知清楚，改变一个真实下一步 | NOT RUN |
+| HA-02 | 跨会话纠正 | 新会话正确读回用户纠正，不复述旧错误 | NOT RUN |
+| HA-03 | Day 7 重复使用 | 同一工作回路再次被主动使用并仍有价值 | NOT RUN |
+| HA-04 | 非开发者安装或恢复 | 非产品发起人可按 Runbook 完成，未依赖临时口头知识 | NOT RUN |
+| HA-05 | 国内宿主现场回路 | 在真实客户端和账号中完成连接、调用、断线恢复 | NOT RUN |
 
-## P1：单用户可安装 MVP
+## 进入多人 Pilot 前
 
-| ID | 必须为真 | 状态 | 真实 proof |
-|---|---|---|---|
-| P1-01 | 全新环境能建 PGLite、Schema、8 Skills 与 Hermes adapter | PASS | isolated fresh install |
-| P1-02 | Hermes 接到的不是假配置，而是可启动的 MCP | PASS | 真实 stdio endpoint，MEMORY_VERBS conformance PASS |
-| P1-03 | 明确选择的中文材料能支撑第一条会前回路 | PASS | intake → sync → meeting-prep |
-| P1-04 | 受限组织资料与客户机密在落盘前被阻断 | PASS | fail-closed intake test |
-| P1-05 | correction 能跨新进程读回 | PASS | remember → fresh process recall |
-| P1-06 | 恢复不是“有备份文件就算了” | PASS | checksum verify → isolated restore → 页面与 correction 回读 |
+- 两条 Hero Loop 有真人重复使用证据。
+- 非发起人能独立安装和恢复。
+- 有非发起人的 support owner。
+- 工作资料 source、企业权限、审计与数据驻留方案另行验收。
 
-P1 的 Accountable Owner 已在私有项目控制面明确；MK 是 Builder / Operator。产品发起人不成为默认 helpdesk。非创始人 support owner 要在 P2 多用户 pilot 前落实。
-
-## P1.1：可交互交付候选
-
-| ID | 必须为真 | 状态 | 自动化证据 |
-|---|---|---|---|
-| P1.1-01 | 三轮问题各自回读确认，最终完整回读再确认 | PASS | injectable interaction tests |
-| P1.1-02 | answers/plan/hash 先生成，独立 `INSTALL` 后才初始化 | PASS | exact-token gate tests |
-| P1.1-03 | 非交互、必答缺失、非法选择、未确认全部 fail closed | PASS | unit + spawned CLI tests |
-| P1.1-04 | Hermes nested package 无用户数据、无凭据、无机器路径并含现有 8 Skills | PASS | P1.1 validator |
-| P1.1-05 | 当前 Hermes 接受 `profile install <local-dir> --name <name> -y` | PASS | isolated local install test |
-| P1.1-06 | 操作与真人验收协议可执行且不虚报 | PASS | runbook + four-scenario blank evidence template |
-
-真人 Day 1 / Day 7、非 Builder 独立恢复和 clean-machine 安装仍未证明。`acceptance/p1.1-evidence-template.json` 的四项状态均为 `not-run`，不能用合成自动化结果替代。
-
-## P1.2：项目身份与国内 Agent 接入
-
-| ID | 必须为真 | 状态 | 证据边界 |
-|---|---|---|---|
-| P1.2-01 | 公开项目入口属于 @MyBrain，不再沿用上游个人介绍与联系方式 | PASS | 根 README + GitHub description |
-| P1.2-02 | WorkBuddy 配置能保留注释与无关 server，冲突时默认拒绝 | PASS-AUTOMATED | `workbuddy-adapter.ts` + host tests |
-| P1.2-03 | DeepSeek Harness patch 使用官方 MCP client 结构并保留无关 operation | PASS-AUTOMATED-PREVIEW | `deepseek-harness-adapter.ts` + host tests |
-| P1.2-04 | 豆包工作伙伴只收到安全的远程登记包，不虚构本地 adapter 或远程部署 | PASS-HANDOFF | `doubao-work-handoff.ts` + host tests |
-| P1.2-05 | 三个国内客户端都完成真人账号 round-trip | PENDING-LIVE | 本机没有 WorkBuddy / DSH；豆包远程托管未建 |
-
-配置 proof 和 live client proof 是两件事。P1.2 只把前者做到可重复验证；P1.2-05 不得被自动化结果改写为 PASS。
-
-## 还没有被证明的事
-
-- 两条以上 Hero Loops 在真实工作中出现重复使用。
-- 非产品发起人可以不依赖 Builder，独立完成安装、恢复和常见故障处理。
-- 飞书、微信、远程 Postgres、企业权限与数据驻留已经解决；豆包登记交接不等于这些问题已解决。
-- 合成验收等于产品市场成立。
-
-因此当前状态是 **P1 candidate**，不是“通用 Brain 已经可以大规模交付”。下一阶段的真正工作不是继续加 Skill，而是拿真实用户证明迁移性与重复使用。
+任何自动化 PASS 都不能替代以上真人门禁。

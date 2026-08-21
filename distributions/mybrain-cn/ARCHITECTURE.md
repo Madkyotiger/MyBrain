@@ -1,59 +1,69 @@
-# 架构与所有权边界
+# @MyBrain CN Architecture
 
-## 三层，不多一层
+## 架构判断
 
-### 1. GBrain Core
+@MyBrain CN 不维护自己的安装与身份状态机。GBrain 原生 Bootstrap 是唯一生产主链路；发行版只在原生生命周期的明确扩展点增加中国职业能力。
 
-上游 `garrytan/gbrain` 继续拥有数据库、检索、图谱、MCP、同步、权限基础和通用 Skillpack/Schema Pack 机制。@MyBrain 不复制这些能力。
+## 权限边界
 
-### 2. @MyBrain Distribution
+### GBrain Core 持有
 
-本目录拥有中国场景的产品合同、默认数据边界、Executive schema、精选 Skill 入口和中文/双语验收。它是 overlay，可独立删除，不应阻塞上游更新。
+- preflight、engine、interview、render、skills、wire、repo、verify
+- `state/interview.json` 与原生完整回读哈希
+- `agent.json` workspace manifest
+- 数据库、source、检索、MCP verbs 与 attach
+- 升级、恢复与 machine-local install receipt
 
-### 3. User Brain
+### @MyBrain CN 持有
 
-每个用户的身份、关系、会议、项目、判断和资料都在自己的私有 Brain。分发仓库只放合成语料和通用规则，不承载任何真实用户内容。
+- 中文 Interview 问法与职业边界说明
+- `mybrain-cn-executive` Schema Pack
+- 第三方原生 Skillpack 中的 8 个 Executive Skills
+- `state/mybrain-cn.json` 激活回执
+- 数据分级与个人 workspace intake 约束
+- 会前准备、纠正、备份恢复等薄工作回路
+- 原生 Bootstrap 后的宿主 Adapter
 
-## Core Patch Gate
+## 单一状态路径
 
-只有同时满足以下条件，才允许修改 GBrain Core：
+身份与安装只允许以下状态：
 
-1. 目标用户的关键回路出现可复现阻断；
-2. 有最小红灯测试，且 overlay 配置无法修复；
-3. 改动保持通用，不写入中国品牌、个人身份或私有路径；
-4. PGLite 与 Postgres 的行为边界被说明；
-5. 有回滚方案，并优先形成可上游贡献的补丁。
+- `workspace/state/interview.json`：原生答案与确认
+- `workspace/agent.json`：原生 workspace 身份
+- `${GBRAIN_HOME}/.gbrain/`：原生数据库、配置与 Schema Pack
+- `workspace/state/mybrain-cn.json`：发行版激活回执，只引用原生 confirmation hash
 
-“感觉中国用户可能需要”不构成 core patch 理由。
+禁止重新引入：
 
-## 上游同步
+- 自建 answers 文件
+- 自建 onboarding hash
+- `MYBRAIN.md` 身份文件
+- `mybrain-cn onboard / plan / init`
+- 静态 Hermes Profile 作为另一套身份入口
 
-- `upstream/master` 是引擎基线。
-- `origin/master` 只保留上游提交、@MyBrain 根 README 与 `distributions/mybrain-cn/**` 差异。
-- 每次 P0/P1 发布前先 fetch 上游，记录 ahead/behind，再跑 `bun run p0`。
-- 如果未来必须改 core，改动要与 overlay 分开提交，便于上游吸收或回退。
+## 生命周期
 
-## 配置变化原则
+1. GBrain 原生 Bootstrap 完成 Interview 完整回读与确认。
+2. 原生 Render 生成 `agent.json` 与身份文件。
+3. `mybrain-cn activate` 校验原生状态。
+4. 发行版使用原生 `schema validate / schema use` 安装 Executive Schema。
+5. 发行版使用原生 `skillpack scaffold` 安装 8 个 Skills。
+6. 流程返回 GBrain 原生 wire、repo、verify。
+7. 需要时再接入 Hermes、WorkBuddy、DeepSeek Harness 或 Feishu Aily。
+8. `gbrain bootstrap verify` 与 `mybrain-cn verify` 必须同时退出 0。
 
-每个功能必须落到至少一种真实变化：配置、输出或工作流。只增加概念命名、不改变使用方式的功能，不进入 MVP。
+## 宿主边界
 
-- Executive schema 改变页面类型和 filing。
-- 数据分级改变可导入范围和模型调用方式。
-- Hero Loop 改变输出结构与下一步。
-- 检索基线改变发布门槛。
+Claude Code、Codex、opencode 可执行完整原生自动 Bootstrap。
 
-## 部署边界
+Hermes、WorkBuddy、DeepSeek Harness 目前是 Bootstrap 后 Adapter。它们共享同一个 Brain 和 source，不生成宿主专属身份状态。Feishu Aily 只有远程 MCP 登记交接。豆包桌面版尚无已验证官方 extension / MCP 接口。
 
-P1 验证本地 PGLite + 私有 Git 的单用户安装路径，并以 Hermes 作为首选 runtime，经 GBrain stdio MCP 的 `verbs` surface 接入。P1.2 增加 WorkBuddy JSONC adapter 与 DeepSeek Harness Cordis patch adapter；它们沿用同一 bounded stdio server，不改 GBrain Core。
+## 数据边界
 
-豆包工作伙伴是云端入口，只接受 SSE / Streamable HTTP 一类远程 MCP 登记。P1.2 只生成无凭据登记交接，不部署远程 server，也不把本地 PGLite 暴露到公网。远程托管、认证、权限与驻留 proof 未完成前，不声明 live compatibility。
+自动个人 workspace intake 允许 `public` 与 `personal_private`。`work_authorized` 需要独立 GBrain source 和明确授权。`org_restricted`、`client_or_secret` 默认阻断。
 
-远程 Postgres、多人权限、飞书/微信连接器、企业 SSO、审计和中国境内数据驻留仍需要独立技术与法律评估；本 overlay 不声称已经解决。
+来源 ID 默认读取 `agent.json.source_id`。资料导入不再依赖发行版自建 workspace config。
 
-各 Agent 的配置形态、官方依据与验证边界见 `AGENT_HOSTS.md`。
+## Upstream 策略
 
-## P1.1 交互与公开 Profile
-
-`src/interactive-onboarding.ts` 只编排 overlay 已有的 answers validator、plan/hash 与 initializer。终端 I/O 可注入；公开 CLI 只接受 TTY，非法或缺失输入停止。三轮确认和最终确认发生在写入前，answers 保存和 plan/hash 生成发生在独立 `INSTALL` 安装确认之前，因此拒绝安装仍可保留一份可审阅计划。
-
-`hermes-profile/` 是独立的 Hermes profile distribution package。它复制现有 8 个薄 Skill 入口，使用环境占位符指向用户私有 GBrain，不内嵌状态、凭据或机器路径。安装测试隔离 `HERMES_HOME`，证明当前本地目录安装语义；它不是 clean-machine proof。
+Core 保持可跟随上游。中国适配留在 `distributions/mybrain-cn/`，只调用 GBrain 已公开的 Bootstrap、Schema、Skillpack、MCP 与 source 合同。若未来必须偏离原生，需要给出失败证据、替代方案、迁移成本与回退条件。

@@ -1,76 +1,66 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { validateP11 } from './validate-p1-1.ts';
+import { validateNativeBootstrap } from './validate-native-bootstrap.ts';
 
 const ROOT = resolve(import.meta.dir, '..');
 const REPO_ROOT = resolve(ROOT, '../..');
-
 type JsonObject = Record<string, any>;
 
 function readJson(path: string): JsonObject {
   return JSON.parse(readFileSync(path, 'utf8')) as JsonObject;
 }
 
-export function validateP12() {
-  const p11 = validateP11();
+export function validateHosts() {
+  const native = validateNativeBootstrap();
   const manifest = readJson(join(ROOT, 'manifest.json'));
-  if (manifest.schema_version !== 'mybrain-cn-p1.2-v1' || manifest.status !== 'p1.2-candidate') {
-    throw new Error('P1.2 manifest must be mybrain-cn-p1.2-v1 / p1.2-candidate');
+  const automatic = manifest.native_bootstrap?.automatic_hosts as string[];
+  const postBootstrap = manifest.native_bootstrap?.post_bootstrap_hosts as string[];
+  const unsupported = manifest.native_bootstrap?.unsupported_hosts as string[];
+  if (JSON.stringify(automatic) !== JSON.stringify(['claude-code', 'codex', 'opencode'])) {
+    throw new Error('automatic native-bootstrap host list drifted');
   }
-  for (const rel of manifest.p1_2?.required_files ?? []) {
-    if (!existsSync(join(ROOT, rel))) throw new Error(`P1.2 required file missing: ${rel}`);
+  if (JSON.stringify(postBootstrap) !== JSON.stringify(['hermes', 'workbuddy', 'deepseek-harness', 'feishu-aily'])) {
+    throw new Error('post-bootstrap host list drifted');
+  }
+  if (!unsupported.includes('doubao-desktop')) throw new Error('Doubao Desktop must stay unsupported until an official interface is verified');
+  if (manifest.release?.live_non_native_clients !== 'not-run') {
+    throw new Error('live non-native clients must not be claimed before account round-trips');
   }
 
   const rootReadme = readFileSync(join(REPO_ROOT, 'README.md'), 'utf8');
-  if (!rootReadme.startsWith('# @MyBrain\n')) throw new Error('Root README must be the @MyBrain public front door.');
-  for (const stale of ["I'm Garry Tan", 'President and CEO of Y Combinator', 'contact me at']) {
-    if (rootReadme.includes(stale)) throw new Error(`Upstream personal project identity remains in root README: ${stale}`);
+  if (!rootReadme.startsWith('# @MyBrain\n')) throw new Error('root README must be the @MyBrain public front door');
+  for (const stale of ["I'm Garry Tan", 'President and CEO of Y Combinator', 'contact me at', '豆包工作伙伴']) {
+    if (rootReadme.includes(stale)) throw new Error(`stale public identity or host claim remains: ${stale}`);
   }
   if (!rootReadme.includes('GBrain') || !rootReadme.includes('MIT License')) {
-    throw new Error('Root README must preserve concise upstream attribution and license visibility.');
-  }
-
-  const support = manifest.p1_2?.host_support as JsonObject;
-  const expected = {
-    hermes: 'verified-automated',
-    workbuddy: 'adapter-verified-live-client-not-run',
-    'deepseek-harness': 'developer-preview-adapter-verified-live-client-not-run',
-    'doubao-work': 'handoff-verified-remote-runtime-not-supplied',
-  };
-  for (const [host, status] of Object.entries(expected)) {
-    if (support?.[host]?.status !== status) throw new Error(`P1.2 host status drift: ${host}`);
-  }
-  if (manifest.p1_2?.live_non_hermes_clients !== 'not-run') {
-    throw new Error('Non-Hermes live clients must not be claimed before real account round-trips.');
+    throw new Error('root README must preserve upstream attribution and license visibility');
   }
 
   const workbuddy = readFileSync(join(ROOT, 'src/workbuddy-adapter.ts'), 'utf8');
   const deepseek = readFileSync(join(ROOT, 'src/deepseek-harness-adapter.ts'), 'utf8');
-  const doubao = readFileSync(join(ROOT, 'src/doubao-work-handoff.ts'), 'utf8');
+  const feishu = readFileSync(join(ROOT, 'src/feishu-aily-handoff.ts'), 'utf8');
   for (const [name, text] of [['WorkBuddy', workbuddy], ['DeepSeek Harness', deepseek]] as const) {
     for (const marker of ["'serve', '--surface', 'verbs', '--source-guard'", "GBRAIN_SWEEP: '0'"]) {
       if (!text.includes(marker)) throw new Error(`${name} adapter is missing bounded MCP marker: ${marker}`);
     }
   }
-  for (const marker of ["endpoint.protocol !== 'https:'", 'Credentials must not be embedded', "deployment_included: false", "credentials_included: false"]) {
-    if (!doubao.includes(marker)) throw new Error(`Doubao Work safety marker missing: ${marker}`);
+  for (const marker of ["endpoint.protocol !== 'https:'", 'Credentials must not be embedded', 'deployment_included: false', 'credentials_included: false']) {
+    if (!feishu.includes(marker)) throw new Error(`Feishu Aily safety marker missing: ${marker}`);
   }
+  if (existsSync(join(ROOT, 'src/doubao-work-handoff.ts'))) throw new Error('mislabelled Doubao Work handoff still exists');
 
-  const acceptance = readJson(join(ROOT, 'mvp-acceptance.json')).p1_2_build as JsonObject[];
-  const statuses = Object.fromEntries(acceptance.map((item) => [item.id, item.status]));
-  if (statuses['P1.2-01'] !== 'pass' || statuses['P1.2-02'] !== 'pass-automated' ||
-      statuses['P1.2-03'] !== 'pass-automated-preview' || statuses['P1.2-04'] !== 'pass-handoff' ||
-      statuses['P1.2-05'] !== 'pending-live-clients') {
-    throw new Error('P1.2 acceptance must distinguish automated adapter proof from pending live clients.');
-  }
+  const acceptance = readJson(join(ROOT, 'mvp-acceptance.json')).release_build as JsonObject[];
+  const hostProof = acceptance.find((item) => item.id === 'RC-08');
+  if (!hostProof || hostProof.status !== 'pass') throw new Error('post-bootstrap host adapter proof is missing');
 
   return {
     status: 'pass',
-    p1_1_regression: p11.status,
-    public_identity: '@MyBrain',
-    agent_hosts: support,
-    live_non_hermes_clients: manifest.p1_2.live_non_hermes_clients,
+    native_bootstrap_status: native.status,
+    automatic_hosts: automatic,
+    post_bootstrap_hosts: postBootstrap,
+    unsupported_hosts: unsupported,
+    live_non_native_clients: manifest.release.live_non_native_clients,
   };
 }
 
-if (import.meta.main) console.log(JSON.stringify(validateP12(), null, 2));
+if (import.meta.main) console.log(JSON.stringify(validateHosts(), null, 2));

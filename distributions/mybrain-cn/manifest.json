@@ -1,21 +1,43 @@
 {
-  "schema_version": "mybrain-cn-p1.2-v1",
-  "status": "p1.2-candidate",
+  "schema_version": "mybrain-cn-release-candidate-v1",
+  "status": "release-candidate",
   "generated_on": "2026-08-21",
   "upstream": {
     "repository": "https://github.com/garrytan/gbrain.git",
-    "branch": "master",
     "base_commit": "b99f4c8b07780d2469608b03c7c301bd2beef271"
   },
   "fork": {
-    "repository": "https://github.com/Madkyotiger/MyBrain.git",
-    "branch": "master",
-    "allowed_delta_prefixes": ["README.md", "distributions/mybrain-cn/"]
+    "strategy": "upstream-first-overlay",
+    "allowed_delta_prefixes": [
+      "README.md",
+      "package.json",
+      "distributions/mybrain-cn/"
+    ]
+  },
+  "architecture": {
+    "core_policy": "overlay-first",
+    "bootstrap_owner": "gbrain-native",
+    "bootstrap_lifecycle": [
+      "preflight",
+      "engine",
+      "interview",
+      "render",
+      "skills",
+      "wire",
+      "repo",
+      "verify"
+    ],
+    "interview_state": "workspace/state/interview.json",
+    "identity_manifest": "workspace/agent.json",
+    "native_confirmation": "gbrain-read-back-hash",
+    "distribution_activation_receipt": "workspace/state/mybrain-cn.json",
+    "parallel_onboarding": false,
+    "static_agent_profile": false
   },
   "product": {
-    "primary_user": "China-based senior brand, marketing, advertising, consulting, or professional-services leader",
-    "promise": "A private professional brain that restores sourced context across sessions and exposes what is missing.",
-    "hero_loops": ["meeting-prep", "project-judgment", "weekly-judgment-evolution"],
+    "name": "@MyBrain CN",
+    "positioning": "GBrain China Executive professional-cognition distribution",
+    "first_user": "senior brand, marketing, advertising, consulting, and professional-services leaders working in China",
     "mvp_skills": [
       "source-grounded-recall",
       "meeting-prep",
@@ -27,117 +49,65 @@
       "correction-loop"
     ]
   },
-  "architecture": {
-    "core_owner": "garrytan/gbrain",
-    "distribution_owner": "Madkyotiger/MyBrain:distributions/mybrain-cn",
-    "public_front_door_owner": "Madkyotiger/MyBrain:README.md",
-    "user_data_owner": "each user's private brain",
-    "core_policy": "overlay-first"
+  "native_bootstrap": {
+    "source_of_truth": [
+      "BOOTSTRAP_FOR_AGENTS.md",
+      "gbrain bootstrap status"
+    ],
+    "automatic_hosts": [
+      "claude-code",
+      "codex",
+      "opencode"
+    ],
+    "post_bootstrap_hosts": [
+      "hermes",
+      "workbuddy",
+      "deepseek-harness",
+      "feishu-aily"
+    ],
+    "unsupported_hosts": [
+      "doubao-desktop"
+    ]
+  },
+  "release": {
+    "schema_pack": "mybrain-cn-executive",
+    "skillpack": "skill-pack/skillpack.json",
+    "mcp_surface": "verbs",
+    "source_guard": true,
+    "source_id_owner": "agent.json.source_id",
+    "live_non_native_clients": "not-run",
+    "required_files": [
+      "src/activation.ts",
+      "src/cli.ts",
+      "src/intake.ts",
+      "src/native-workspace.ts",
+      "src/hermes-adapter.ts",
+      "src/workbuddy-adapter.ts",
+      "src/deepseek-harness-adapter.ts",
+      "src/feishu-aily-handoff.ts",
+      "tests/p1-unit.test.ts",
+      "tests/p1-e2e.serial.test.ts",
+      "tests/p1-2-hosts.test.ts",
+      "acceptance/HUMAN_ACCEPTANCE.md",
+      "acceptance/release-evidence-template.json",
+      "scripts/validate-native-bootstrap.ts",
+      "scripts/validate-p1-2.ts"
+    ]
   },
   "required_files": [
-    "README.md",
     "PRODUCT_CONTRACT.md",
     "ARCHITECTURE.md",
     "DATA_CLASSIFICATION.md",
-    "UPSTREAM_DELTA.md",
+    "README.md",
+    "BOOTSTRAP_FOR_AGENTS.md",
+    "AGENT_HOSTS.md",
+    "OPERATOR_RUNBOOK.md",
     "MVP_ACCEPTANCE.md",
     "data-policy.json",
     "mvp-acceptance.json",
-    "schema-packs/mybrain-cn-executive/pack.yaml",
     "evals/retrieval-baseline.json",
-    "tests/p0-contract.test.ts",
-    "tests/chinese-retrieval-baseline.test.ts",
-    "scripts/validate-p0.ts",
-    "package.json"
-  ],
-  "p1": {
-    "default_runtime": "hermes",
-    "engine": "local-pglite",
-    "mcp_surface": "verbs",
-    "owner_model": {
-      "accountable": "named product owner in the private project control plane",
-      "builder_operator": "MK",
-      "support_owner_required_before": "P2 multi-user pilot"
-    },
-    "required_files": [
-      "fixtures/example-answers.json",
-      "src/cli.ts",
-      "src/onboarding.ts",
-      "src/hermes-adapter.ts",
-      "src/intake.ts",
-      "src/hero-loops.ts",
-      "src/backup.ts",
-      "scripts/validate-p1.ts",
-      "tests/p1-unit.test.ts",
-      "tests/p1-e2e.serial.test.ts"
-    ],
-    "acceptance_proofs": [
-      "fresh-install",
-      "stdio-mcp-conformance",
-      "explicit-intake-and-meeting-prep",
-      "blocked-data-rejection",
-      "fresh-process-correction-readback",
-      "checksum-backup-and-isolated-restore"
-    ]
-  },
-  "p1_1": {
-    "scope": "interactive-onboarding-public-hermes-profile-operator-and-human-acceptance",
-    "required_files": [
-      "src/interactive-onboarding.ts",
-      "hermes-profile/distribution.yaml",
-      "hermes-profile/SOUL.md",
-      "hermes-profile/config.yaml",
-      "hermes-profile/mcp.json",
-      "OPERATOR_RUNBOOK.md",
-      "acceptance/HUMAN_ACCEPTANCE.md",
-      "acceptance/p1.1-evidence-template.json",
-      "scripts/validate-p1-1.ts",
-      "tests/p1-1-unit.test.ts",
-      "tests/p1-1-profile.test.ts",
-      "tests/helpers/bounded-conformance.ts"
-    ],
-    "automated_proofs": [
-      "three-round-confirmed-onboarding",
-      "final-readback-and-separate-install-confirmation",
-      "non-interactive-and-invalid-input-fail-closed",
-      "user-data-free-hermes-profile",
-      "current-local-directory-profile-install-semantics",
-      "exact-existing-eight-skills",
-      "manifest-and-mcp-config-validity",
-      "p0-and-p1-regression"
-    ],
-    "human_acceptance": "not-run",
-    "clean_machine_proof": "not-claimed"
-  },
-  "p1_2": {
-    "scope": "mybrain-public-identity-and-mainland-agent-host-compatibility",
-    "required_files": [
-      "AGENT_HOSTS.md",
-      "src/workbuddy-adapter.ts",
-      "src/deepseek-harness-adapter.ts",
-      "src/doubao-work-handoff.ts",
-      "scripts/validate-p1-2.ts",
-      "tests/p1-2-hosts.test.ts"
-    ],
-    "host_support": {
-      "hermes": {
-        "mode": "local-profile-and-stdio-mcp",
-        "status": "verified-automated"
-      },
-      "workbuddy": {
-        "mode": "jsonc-stdio-mcp-adapter",
-        "status": "adapter-verified-live-client-not-run"
-      },
-      "deepseek-harness": {
-        "mode": "cordis-patch-stdio-mcp-adapter",
-        "status": "developer-preview-adapter-verified-live-client-not-run"
-      },
-      "doubao-work": {
-        "mode": "streamable-http-registration-handoff",
-        "status": "handoff-verified-remote-runtime-not-supplied"
-      }
-    },
-    "public_identity": "root README and GitHub description are owned by @MyBrain",
-    "live_non_hermes_clients": "not-run"
-  }
+    "schema-packs/mybrain-cn-executive/pack.yaml",
+    "skill-pack/skillpack.json",
+    "src/activation.ts"
+  ]
 }

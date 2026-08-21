@@ -1,51 +1,83 @@
 import { afterAll, describe, expect, test } from 'bun:test';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import yaml from 'js-yaml';
+import { readBackHash } from '../../../src/core/bootstrap/interview.ts';
+import { activateMyBrain, verifyMyBrain } from '../src/activation.ts';
 import { createBackup, restoreBackup, verifyBackup } from '../src/backup.ts';
 import { readJson, REPO_ROOT } from '../src/common.ts';
 import { callVerb, runGbrain } from '../src/gbrain-runtime.ts';
 import { buildMeetingPrep, recordCorrection } from '../src/hero-loops.ts';
 import { intakeFile } from '../src/intake.ts';
-import { initializeMyBrain, loadAnswers, onboardingHash } from '../src/onboarding.ts';
 import { runBoundedStdioConformance } from './helpers/bounded-conformance.ts';
 
 const root = mkdtempSync(join(tmpdir(), 'mybrain-p1-e2e-'));
 const workspace = join(root, 'workspace');
 const stateRoot = join(root, 'state');
-const hermesConfig = join(root, 'hermes', 'config.yaml');
-const answersPath = join(import.meta.dir, '../fixtures/example-answers.json');
 const gbrainCli = join(import.meta.dir, '../../../src/cli.ts');
 
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-describe('P1 fresh install, first loop, correction, and recovery', () => {
-  test('fresh init installs schema, eight skills, and isolated Hermes adapter', () => {
-    const answers = loadAnswers(answersPath);
-    const receipt = initializeMyBrain({
-      answersPath,
-      workspace,
-      stateRoot,
-      confirmationHash: onboardingHash(answers),
-      hermesConfig,
-      gbrainCli,
-    });
-    expect(receipt.skills_installed).toBe(8);
-    expect(existsSync(join(stateRoot, '.gbrain', 'brain.pglite'))).toBe(true);
+describe('P1 native bootstrap, activation, first loop, correction, and recovery', () => {
+  test('native GBrain bootstrap is the only identity path; MyBrain activates schema and skills after render', () => {
+    mkdirSync(workspace, { recursive: true });
+    runGbrain(
+      ['init', '--pglite', '--path', join(stateRoot, '.gbrain', 'brain.pglite'), '--no-embedding', '--skip-embed-check', '--json'],
+      { stateRoot, cwd: workspace, gbrainCli },
+    );
+    runGbrain(['bootstrap', 'interview', '--init'], { stateRoot, cwd: workspace, gbrainCli });
+    const answers: Record<string, string> = {
+      AGENT_NAME: '远岚',
+      PRINCIPAL_NAME: '示例用户',
+      AGENT_PURPOSE: '为中国资深管理者保存有来源的职业上下文，并改善会前判断。',
+      AGENT_TOP_JOBS: '会前准备；记录决定与承诺；在新会话中读回纠正。',
+      PRINCIPAL_CONTEXT: '在中国负责品牌与增长，工作语言是中文和 English，重视证据、边界和可逆判断。',
+      VOICE_REGISTER: '先给结论，再给足以改变决定的证据；中文为主，不说套话。',
+      PRINCIPAL_BOUNDARIES: '只导入本人明确选择的资料；公司受限资料与客户秘密默认阻断。',
+      ACCESS_TIERS: '个人私密资料仅本人可用；工作资料必须有明确授权和独立来源。',
+      SURFACE_PRIMARY: '当前原生 GBrain bootstrap workspace；宿主接入在 bootstrap 后进行。',
+      MEMORY_WHAT_MATTERS: '纠正、承诺、关系上下文、决定依据，以及什么会推翻当前判断。',
+    };
+    for (const [key, value] of Object.entries(answers)) {
+      runGbrain(['bootstrap', 'interview', '--set', key, value], { stateRoot, cwd: workspace, gbrainCli });
+    }
+    const readback = readBackHash(workspace);
+    expect(readback.ok).toBe(true);
+    if (!readback.ok) throw new Error(readback.message);
+    runGbrain(['bootstrap', 'interview', '--show'], { stateRoot, cwd: workspace, gbrainCli });
+    runGbrain(['bootstrap', 'interview', '--confirm', readback.hash], { stateRoot, cwd: workspace, gbrainCli });
+    runGbrain(['bootstrap', 'render'], { stateRoot, cwd: workspace, gbrainCli });
+
+    const receipt = activateMyBrain({ workspace, stateRoot, gbrainCli });
+    expect(receipt.native_confirmation_hash).toBe(readback.hash);
+    expect(receipt.skills).toHaveLength(8);
+    expect(existsSync(join(workspace, 'agent.json'))).toBe(true);
+    expect(existsSync(join(workspace, 'state', 'interview.json'))).toBe(true);
+    expect(existsSync(join(workspace, 'state', 'mybrain-cn.json'))).toBe(true);
     expect(existsSync(join(workspace, 'skills', 'meeting-prep', 'SKILL.md'))).toBe(true);
-    const parsed = yaml.load(readFileSync(hermesConfig, 'utf8')) as any;
-    expect(parsed.mcp_servers.mybrain.args).toEqual([
-      'run',
-      gbrainCli,
-      'serve',
-      '--surface',
-      'verbs',
-      '--source-guard',
-    ]);
-    const schema = runGbrain(['schema', 'validate', 'mybrain-cn-executive', '--json'], { stateRoot, gbrainCli });
+    expect(existsSync(join(workspace, '.mybrain-init-receipt.json'))).toBe(false);
+    expect(existsSync(join(workspace, 'MYBRAIN.md'))).toBe(false);
+    expect(existsSync(join(stateRoot, '.gbrain', 'brain.pglite'))).toBe(true);
+    expect(verifyMyBrain({ workspace, stateRoot, gbrainCli }).ok).toBe(true);
+
+    const gitInit = Bun.spawnSync(['git', 'init'], { cwd: workspace });
+    expect(gitInit.exitCode).toBe(0);
+    expect(existsSync(join(workspace, '.git'))).toBe(true);
+
+    const schema = runGbrain(['schema', 'validate', 'mybrain-cn-executive'], { stateRoot, gbrainCli });
     expect(schema.code).toBe(0);
   }, 180_000);
+
+  test('distribution CLI has no parallel onboard, plan, or init entry', () => {
+    const result = Bun.spawnSync(['bun', join(import.meta.dir, '../src/cli.ts'), '--help']);
+    const help = result.stdout.toString();
+    expect(result.exitCode).toBe(0);
+    expect(help).toContain('mybrain-cn activate');
+    expect(help).toContain('GBrain native bootstrap owns');
+    expect(help).not.toContain('mybrain-cn onboard');
+    expect(help).not.toContain('mybrain-cn plan');
+    expect(help).not.toContain('mybrain-cn init');
+  });
 
   test('actual stdio MCP endpoint conforms to the seven-verb contract', () => {
     return runBoundedStdioConformance({
@@ -68,7 +100,6 @@ describe('P1 fresh install, first loop, correction, and recovery', () => {
       inputPath: note,
       workspace,
       dataClass: 'personal_private',
-      sourceId: 'default',
       stateRoot,
       sync: true,
       gbrainCli,
@@ -87,7 +118,6 @@ describe('P1 fresh install, first loop, correction, and recovery', () => {
       inputPath: blocked,
       workspace,
       dataClass: 'client_or_secret',
-      sourceId: 'default',
     })).toThrow('blocked');
     expect(readFileSync(blocked, 'utf8')).toBe('synthetic restricted fixture');
     expect(() => intakeFile({

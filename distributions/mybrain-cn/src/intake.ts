@@ -4,22 +4,24 @@ import { spawnSync } from 'node:child_process';
 import {
   assertInside,
   assertRegularFile,
-  readJson,
   requireAbsolute,
   safeId,
   sha256File,
   writeJson,
   writeText,
 } from './common.ts';
+import { readManifest } from '../../../src/core/bootstrap/format.ts';
 import { runGbrain } from './gbrain-runtime.ts';
 
 export type DataClass = 'public' | 'personal_private' | 'work_authorized' | 'org_restricted' | 'client_or_secret';
+
+const AUTOMATIC_INTAKE_CLASSES = new Set<DataClass>(['public', 'personal_private']);
 
 export interface IntakeOptions {
   inputPath: string;
   workspace: string;
   dataClass: DataClass;
-  sourceId: string;
+  sourceId?: string;
   stateRoot?: string;
   sync?: boolean;
   gbrainCli?: string;
@@ -51,7 +53,6 @@ function commitImport(workspace: string, relativePath: string): string {
 export function intakeFile(options: IntakeOptions) {
   const inputPath = requireAbsolute(options.inputPath, 'input path');
   const workspace = requireAbsolute(options.workspace, 'workspace');
-  const sourceId = safeId(options.sourceId, 'source id');
   assertRegularFile(inputPath);
   if (!existsSync(join(workspace, '.git'))) throw new Error(`Workspace is not an initialized private git repo: ${workspace}`);
   const ext = extname(inputPath).toLowerCase();
@@ -62,15 +63,24 @@ export function intakeFile(options: IntakeOptions) {
   if (options.dataClass === 'org_restricted' || options.dataClass === 'client_or_secret') {
     throw new Error(`Data class ${options.dataClass} is blocked by @MyBrain P1 policy.`);
   }
-  const workspaceConfig = readJson<{ source_id: string; allowed_data_classes: string[] }>(join(workspace, 'mybrain.json'));
-  if (!workspaceConfig.allowed_data_classes.includes(options.dataClass)) {
-    throw new Error(`Data class ${options.dataClass} is not allowed by this workspace.`);
+  const manifestState = readManifest(workspace);
+  if (manifestState.state !== 'initialized') {
+    throw new Error(
+      `Native GBrain bootstrap must initialize agent.json before intake (current state: ${manifestState.state}).`,
+    );
+  }
+  const sourceId = safeId(options.sourceId ?? manifestState.manifest.source_id, 'source id');
+  if (!existsSync(join(workspace, 'state', 'mybrain-cn.json'))) {
+    throw new Error('MyBrain CN is not activated in this native workspace. Run `mybrain-cn activate` first.');
   }
   if (options.dataClass === 'work_authorized') {
     throw new Error(
       'work_authorized intake requires a separately registered GBrain source and an explicit source-specific workflow; ' +
-      'the P1 automatic intake command refuses to stage it in the personal workspace.',
+      'the automatic personal-workspace intake command refuses to stage it.',
     );
+  }
+  if (!AUTOMATIC_INTAKE_CLASSES.has(options.dataClass)) {
+    throw new Error(`Data class ${options.dataClass} is not allowed by the automatic personal-workspace intake path.`);
   }
 
   const hash = sha256File(inputPath);
@@ -96,8 +106,8 @@ export function intakeFile(options: IntakeOptions) {
   let syncReceipt: { code: number; stdout: string; stderr: string } | null = null;
   if (options.sync) {
     if (!options.stateRoot) throw new Error('--sync requires an explicit GBrain state root.');
-    if (sourceId !== workspaceConfig.source_id) {
-      throw new Error('P1 sync only auto-runs for the workspace default source; register separated work sources explicitly first.');
+    if (sourceId !== manifestState.manifest.source_id) {
+      throw new Error('Automatic sync only runs for the native workspace source; register separated work sources explicitly first.');
     }
     syncReceipt = runGbrain(
       ['sync', '--repo', workspace, '--full', '--no-embed', '--no-extract', '--no-pull', '--yes', '--exclude', '.mybrain-provenance/**'],

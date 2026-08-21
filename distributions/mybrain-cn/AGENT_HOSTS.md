@@ -1,114 +1,71 @@
-# Agent 接入矩阵
+# @MyBrain CN Agent Host Support
 
-更新日期：2026-08-21。
+## 判断规则
 
-本文件只声明已经做出的配置变化和证据边界。能生成配置，不等于目标客户端已经在真实用户电脑上跑通。
+“能接入 Brain”不等于“能自动 Onboarding”。完整自动 Onboarding 需要宿主能执行 GBrain 原生 Bootstrap 的全部阶段，并能读写本地文件、运行命令、等待用户确认。
+
+| 宿主 | 原生自动 Bootstrap | Bootstrap 后接入 | 当前证据 | 发布口径 |
+|---|---|---|---|---|
+| Claude Code | 是 | 原生 wiring | GBrain 原生支持 | 支持 |
+| Codex | 是 | 原生 wiring | GBrain 原生支持 | 支持 |
+| opencode | 是 | 原生 wiring | GBrain 原生支持 | 支持 |
+| Hermes Agent | 否 | YAML stdio MCP Adapter | 配置保真与 verbs 协议自动化已验证；真人聊天回路待验 | 接入候选 |
+| WorkBuddy | 否 | JSONC stdio MCP Adapter | 注释与其他 server 保真、拒绝静默覆盖；客户端现场测试待验 | 接入候选 |
+| DeepSeek Harness | 否 | Cordis patch stdio MCP Adapter | patch 合并与 bounded verbs 自动化已验证；产品仍属 developer preview | 接入候选 |
+| Feishu Aily | 否 | Streamable HTTP 登记交接 | HTTPS、无内嵌凭据、私网拒绝均已验证；不含远程部署 | 登记交接 |
+| 豆包桌面版 / 豆包工作 | 否 | 无 | 未找到已验证官方 extension / MCP 接口 | 不支持 |
+
+## 自动 Bootstrap 宿主
+
+Claude Code、Codex、opencode 读取仓库根目录 `BOOTSTRAP_FOR_AGENTS.md`，执行 GBrain 原生生命周期。@MyBrain 的中文问法与职业边界写入同一个原生 Interview 状态。原生 Render 后运行 `mybrain-cn activate`，然后回到原生 repo 与 verify。
 
 ## Hermes Agent
 
-**形态：本地 Profile + stdio MCP。**
+```bash
+mybrain-cn runtime hermes \
+  --config <absolute-config-yaml> \
+  --workspace <absolute-workspace> \
+  --state-root <absolute-gbrain-state-root>
+```
 
-- `hermes-profile/` 提供无用户数据的公开 Profile。
-- `src/hermes-adapter.ts` 只改 `mcp_servers.mybrain`，保留其他配置，写入前备份。
-- MCP 启动面固定为 `serve --surface verbs --source-guard`。
-- 已验证：隔离 Profile 安装、8 Skills 一致性、stdio 七动词协议。
-- 未验证：全新非 Builder 电脑、真人 Day 7。
-
-参考：<https://hermes-agent.nousresearch.com/docs/>
+Adapter 只增加一个 source-guarded、verbs-only 的 stdio MCP server；保留无关配置；已有同名 server 时拒绝静默替换。它不安装 Hermes，不创建 Profile，不重跑 Interview。
 
 ## WorkBuddy
 
-**形态：本地 JSONC MCP 配置。**
-
-`src/workbuddy-adapter.ts` 写入用户或项目 `.mcp.json` 的 `mcpServers.mybrain`：
-
-- transport：`stdio`
-- command：`bun`
-- args：bounded GBrain verbs server
-- env：用户明确给出的 state root 与 source ID
-
-Adapter 使用 JSONC 文本编辑，保留注释与无关 server；目标 entry 已存在时默认拒绝，只有显式 `--force` 才替换该 entry。写入前保留备份。
-
 ```bash
-bun src/cli.ts runtime workbuddy \
-  --config /absolute/path/to/.mcp.json \
-  --state-root /absolute/path/to/private-state
+mybrain-cn runtime workbuddy \
+  --config <absolute-mcp-jsonc> \
+  --workspace <absolute-workspace> \
+  --state-root <absolute-gbrain-state-root>
 ```
 
-已验证：配置合并、注释保留、冲突拒绝、备份、bounded command。
-
-未验证：当前机器没有 WorkBuddy / CodeBuddy CLI，因此未声称 live client round-trip。
-
-官方依据：
-
-- <https://www.workbuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Connector>
-- <https://www.workbuddy.ai/docs/zh/cli/mcp>
-- <https://www.workbuddy.ai/docs/zh/cli/plugins-reference>
+Adapter 保留 JSONC 注释与其他 server。真实客户端账号回路尚未完成，不能把配置生成当作现场可用证明。
 
 ## DeepSeek Harness
 
-**形态：本地 Cordis patch + 官方 MCP client plugin。**
-
-`src/deepseek-harness-adapter.ts` 向明确给出的 `cordis.patch.yml` 添加 `mybrain-mcp` operation：
-
-- plugin：`@deepseek-ai/dsh-mcp-client`
-- transport：`stdio`
-- command：`bun`
-- failOnStartupError：`true`
-- toolCallTimeoutMs：`120000`
-
-Adapter 保留无关 operation；同 ID 已存在时默认拒绝；写入前保留备份。
-
 ```bash
-bun src/cli.ts runtime deepseek-harness \
-  --patch /absolute/path/to/cordis.patch.yml \
-  --workspace /absolute/path/to/private-workspace \
-  --state-root /absolute/path/to/private-state
+mybrain-cn runtime deepseek-harness \
+  --patch <absolute-cordis-patch-yaml> \
+  --workspace <absolute-workspace> \
+  --state-root <absolute-gbrain-state-root>
 ```
 
-已验证：patch 合并、冲突拒绝、备份与 bounded stdio command。
+Adapter 写入官方 MCP client 结构并保留无关 patch operation。DeepSeek Harness 仍属 developer preview；版本变化可能要求重验。
 
-未验证：本机没有 DSH；DeepSeek Harness 官方仍标为 developer preview，兼容性可能变化。
-
-官方依据：
-
-- <https://github.com/deepseek-ai/deepseek-harness>
-- <https://deepseek-harness.github.io/deepseek-harness/reference/config-catalog>
-- <https://github.com/deepseek-ai/deepseek-harness/tree/master/examples/mcp-memory>
-
-## 豆包工作伙伴
-
-**形态：云端 Streamable HTTP MCP 登记交接。**
-
-豆包工作伙伴不是另一份本地 stdio 配置。`src/doubao-work-handoff.ts` 只为已经存在的 HTTPS MCP endpoint 生成登记包：
+## Feishu Aily
 
 ```bash
-bun src/cli.ts runtime doubao-work \
+mybrain-cn runtime feishu-aily \
   --url https://brain.example.com/mcp \
-  --output /absolute/path/to/doubao-work-registration.json
+  --output <absolute-registration-json>
 ```
 
-安全默认：
+该命令只生成登记包，不部署远程 server，不保存凭据，也不把本地 PGLite 直接暴露到公网。认证、租户权限、审计与数据驻留属于独立上线门禁。
 
-- 拒绝 HTTP、localhost、私网地址和 URL 内嵌凭据。
-- 只记录 header 名和 secret placeholder，不接收或写出 token。
-- 默认 visibility 为 self-only。
-- 明确标记“不部署远程服务、不暴露本地 PGLite”。
+## 豆包桌面版
 
-已验证：登记包结构与安全拒绝规则。
+当前不提供 Adapter。下载页证明桌面产品存在，不能证明它公开了可安装 extension、stdio MCP 或 Streamable HTTP MCP 接口。发现官方接口后，要先完成最小连接、权限边界和断线恢复验证，再进入支持矩阵。
 
-未验证：远程 MCP 托管、OAuth/密钥轮换、企业权限、真人账号登记与中国境内数据驻留。没有这些 proof 前，状态只能是 `registration-handoff-only`。
+## Source 规则
 
-官方依据：
-
-- <https://aily.feishu.cn/hc/1u7kleqg/4q7o7as7>
-- <https://aily.feishu.cn/hc/1u7kleqg/fiogabrc>
-
-## 选择规则
-
-- 想先证明个人 Agent 跨会话使用：Hermes。
-- 已经在国内桌面办公 Agent 中工作：WorkBuddy。
-- 想验证开发者可组合 Harness：DeepSeek Harness，但接受 preview 风险。
-- 想进入飞书云端工作入口：豆包工作伙伴，但先完成远程托管、认证、权限与驻留评估。
-
-接入顺序不能替代产品验收。任何 host 都必须重新跑一次“记住一条纠正 → 新会话读回 → 备份恢复后再读回”。
+宿主默认 source 应与原生 `agent.json.source_id` 一致。显式指定其他 source 前，必须先在 GBrain 注册并验证权限；不得用 Adapter 绕过 source 隔离。

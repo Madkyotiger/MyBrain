@@ -2,10 +2,12 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, resolve } from 'node:path';
 import { applyEdits, modify, parse as parseJsonc, type ParseError } from 'jsonc-parser';
 import { GBRAIN_CLI, requireAbsolute } from './common.ts';
+import { resolveNativeSourceId } from './native-workspace.ts';
 
 export interface WorkBuddyAdapterOptions {
   configPath: string;
   stateRoot: string;
+  workspace: string;
   sourceId?: string;
   gbrainCli?: string;
   force?: boolean;
@@ -24,6 +26,7 @@ export interface WorkBuddyAdapterReceipt {
 export function configureWorkBuddyAdapter(options: WorkBuddyAdapterOptions): WorkBuddyAdapterReceipt {
   const configPath = requireAbsolute(options.configPath, 'WorkBuddy MCP config path');
   const stateRoot = requireAbsolute(options.stateRoot, 'GBrain state root');
+  const { sourceId } = resolveNativeSourceId(options.workspace, options.sourceId);
   const gbrainCli = requireAbsolute(options.gbrainCli ?? GBRAIN_CLI, 'GBrain CLI path');
   const original = existsSync(configPath) ? readFileSync(configPath, 'utf8') : '';
   const base = original.trim() ? original : '{}\n';
@@ -42,7 +45,7 @@ export function configureWorkBuddyAdapter(options: WorkBuddyAdapterOptions): Wor
     args: ['run', gbrainCli, 'serve', '--surface', 'verbs', '--source-guard'],
     env: {
       GBRAIN_HOME: stateRoot,
-      GBRAIN_SOURCE: options.sourceId ?? 'default',
+      GBRAIN_SOURCE: sourceId,
       GBRAIN_SWEEP: '0',
     },
     description: '@MyBrain bounded memory verbs',

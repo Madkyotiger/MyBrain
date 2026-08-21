@@ -1,0 +1,41 @@
+{
+  "schema_version": "mybrain-cn-human-acceptance-v1",
+  "overall_status": "not-run",
+  "scenarios": [
+    {
+      "id": "HA-01",
+      "name": "Day 1 real meeting preparation",
+      "status": "not-run",
+      "pass_rule": "source-grounded output changes one real preparation action",
+      "evidence": []
+    },
+    {
+      "id": "HA-02",
+      "name": "cross-session correction",
+      "status": "not-run",
+      "pass_rule": "a new session uses the correction and does not repeat the old error",
+      "evidence": []
+    },
+    {
+      "id": "HA-03",
+      "name": "Day 7 repeated use",
+      "status": "not-run",
+      "pass_rule": "the user voluntarily repeats the same loop and it remains decision-useful",
+      "evidence": []
+    },
+    {
+      "id": "HA-04",
+      "name": "independent install or recovery",
+      "status": "not-run",
+      "pass_rule": "a non-developer completes native bootstrap, activation, verification, or isolated recovery from the runbook",
+      "evidence": []
+    },
+    {
+      "id": "HA-05",
+      "name": "live mainland host round-trip",
+      "status": "not-run",
+      "pass_rule": "a real supported client completes attach, one brain call, and reconnect",
+      "evidence": []
+    }
+  ]
+}

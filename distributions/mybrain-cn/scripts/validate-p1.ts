@@ -3,7 +3,6 @@ import { join, resolve } from 'node:path';
 import { validateP0 } from './validate-p0.ts';
 
 const ROOT = resolve(import.meta.dir, '..');
-
 type JsonObject = Record<string, any>;
 
 function readJson(rel: string): JsonObject {
@@ -13,39 +12,52 @@ function readJson(rel: string): JsonObject {
 export function validateP1() {
   const p0 = validateP0();
   const manifest = readJson('manifest.json');
-  if (!['mybrain-cn-p1-v1', 'mybrain-cn-p1.1-v1', 'mybrain-cn-p1.2-v1'].includes(manifest.schema_version) ||
-      !['p1-candidate', 'p1.1-candidate', 'p1.2-candidate'].includes(manifest.status)) {
-    throw new Error('P1 manifest must retain a P1/P1.1/P1.2 candidate state');
+  if (manifest.schema_version !== 'mybrain-cn-release-candidate-v1' || manifest.status !== 'release-candidate') {
+    throw new Error('release manifest identity is invalid');
   }
-  if (manifest.p1?.default_runtime !== 'hermes' || manifest.p1?.mcp_surface !== 'verbs') {
-    throw new Error('P1 must stay Hermes-first and expose the bounded verbs surface');
+  if (manifest.architecture?.bootstrap_owner !== 'gbrain-native' || manifest.architecture?.parallel_onboarding !== false) {
+    throw new Error('GBrain native bootstrap must be the single production owner');
   }
-  for (const rel of manifest.p1.required_files as string[]) {
-    if (!existsSync(join(ROOT, rel))) throw new Error(`P1 required file missing: ${rel}`);
+  if (manifest.release?.mcp_surface !== 'verbs' || manifest.release?.source_guard !== true) {
+    throw new Error('release must expose the bounded source-guarded verbs surface');
+  }
+  if (manifest.release?.source_id_owner !== 'agent.json.source_id') {
+    throw new Error('native agent.json must own the default source id');
+  }
+  for (const rel of manifest.release.required_files as string[]) {
+    if (!existsSync(join(ROOT, rel))) throw new Error(`release required file missing: ${rel}`);
   }
 
   const expectedSkills = manifest.product.mvp_skills as string[];
-  const actualSkills = readdirSync(join(ROOT, 'skill-pack'), { withFileTypes: true })
+  const skillpack = readJson('skill-pack/skillpack.json');
+  if (skillpack.api_version !== 'gbrain-skillpack-v1' || skillpack.schema_pack !== 'mybrain-cn-executive') {
+    throw new Error('native third-party Skillpack contract is invalid');
+  }
+  const expectedPaths = expectedSkills.map((name) => `skills/${name}`);
+  if (JSON.stringify(skillpack.skills) !== JSON.stringify(expectedPaths)) {
+    throw new Error('Skillpack paths do not match the release skill set');
+  }
+  const actualSkills = readdirSync(join(ROOT, 'skill-pack', 'skills'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
   if (actualSkills.length !== 8 || JSON.stringify(actualSkills) !== JSON.stringify([...expectedSkills].sort())) {
-    throw new Error(`P1 skill pack mismatch: ${actualSkills.join(', ')}`);
+    throw new Error(`release skill pack mismatch: ${actualSkills.join(', ')}`);
   }
   for (const name of actualSkills) {
-    const text = readFileSync(join(ROOT, 'skill-pack', name, 'SKILL.md'), 'utf8');
+    const text = readFileSync(join(ROOT, 'skill-pack', 'skills', name, 'SKILL.md'), 'utf8');
     if (!text.includes(`name: ${name}`) || text.length < 300) throw new Error(`Skill is missing or too thin: ${name}`);
   }
 
   const acceptance = readJson('mvp-acceptance.json');
-  const build = acceptance.p1_build as JsonObject[];
-  if (build.length !== 6 || build.some((item) => item.status !== 'pass')) {
-    throw new Error('All six P1 build proofs must be pass');
+  const build = acceptance.release_build as JsonObject[];
+  if (build.length !== 9 || build.some((item) => item.status !== 'pass')) {
+    throw new Error('all nine release build proofs must be pass');
   }
   const owner = (acceptance.phase1_entry as JsonObject[]).find((item) => item.id === 'P1-OWNER');
-  if (!owner || owner.status !== 'pass') throw new Error('P1 accountable owner must be named in the private control plane');
+  if (!owner || owner.status !== 'pass') throw new Error('accountable owner gate must be pass');
   const support = (acceptance.phase1_entry as JsonObject[]).find((item) => item.id === 'P1-SUPPORT');
-  if (!support || support.status !== 'deferred') throw new Error('Support owner must remain an explicit P2 gate');
+  if (!support || support.status !== 'deferred') throw new Error('support owner must remain an explicit pilot gate');
 
   const adapter = readFileSync(join(ROOT, 'src/hermes-adapter.ts'), 'utf8');
   if (!adapter.includes("['run', gbrainCli, 'serve', '--surface', 'verbs', '--source-guard']")) {
@@ -55,12 +67,12 @@ export function validateP1() {
   return {
     status: 'pass',
     p0_status: p0.status,
-    p1_build_proofs: build.map((item) => item.id),
+    bootstrap_owner: manifest.architecture.bootstrap_owner,
+    release_build_proofs: build.map((item) => item.id),
     skills: actualSkills,
-    default_runtime: manifest.p1.default_runtime,
-    mcp_surface: manifest.p1.mcp_surface,
-    remaining_human_gates: (acceptance.mvp as JsonObject[])
-      .filter((item) => String(item.status).startsWith('pending'))
+    mcp_surface: manifest.release.mcp_surface,
+    remaining_human_gates: (acceptance.human_validation as JsonObject[])
+      .filter((item) => item.status === 'not-run')
       .map((item) => item.id),
   };
 }

@@ -66,11 +66,11 @@ function changedPaths(): string[] {
 
 export function validateP0(): P0Receipt {
   const manifest = readJson('manifest.json');
-  if (!['mybrain-cn-p0-v1', 'mybrain-cn-p1-v1', 'mybrain-cn-p1.1-v1', 'mybrain-cn-p1.2-v1'].includes(manifest.schema_version)) {
+  if (manifest.schema_version !== 'mybrain-cn-release-candidate-v1') {
     throw new Error('unexpected manifest schema_version');
   }
-  if (!['p0-candidate', 'p1-candidate', 'p1.1-candidate', 'p1.2-candidate'].includes(manifest.status)) {
-    throw new Error('distribution status must retain a validated P0/P1 candidate state');
+  if (manifest.status !== 'release-candidate') {
+    throw new Error('distribution status must be release-candidate');
   }
   if (manifest.architecture?.core_policy !== 'overlay-first') throw new Error('core policy must stay overlay-first');
 

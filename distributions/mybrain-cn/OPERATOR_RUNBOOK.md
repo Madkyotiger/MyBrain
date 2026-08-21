@@ -1,48 +1,133 @@
-# @MyBrain P1.1 Operator Runbook
+# @MyBrain CN Operator Runbook
 
-This runbook is for a single-user local PGLite deployment. It is not a clean-machine certification, an enterprise permission model, or a substitute for organizational policy.
+## 目的
 
-## 1. Install
+把一台新机器带到可验证的 @MyBrain CN 单用户状态。此手册服从 GBrain 原生 Bootstrap，不另开实验入口。
 
-1. Install Bun, GBrain, and Hermes using their own official instructions.
-2. From this distribution directory run `bun src/cli.ts onboard` in an interactive terminal.
-3. Complete all three rounds. Each round requires its own `确认`, followed by a final full readback and another `确认`.
-4. The command writes the private answers file and prints the existing plan plus `confirmation_hash`.
-5. Initialization runs only if the operator then enters the separate exact token `INSTALL`. Any other input stops after planning.
-6. For the public Hermes profile, set `MYBRAIN_GBRAIN_CLI` and `MYBRAIN_GBRAIN_HOME` privately, then run:
+## 1. Preflight
 
-   ```bash
-   hermes profile install /path/to/distributions/mybrain-cn/hermes-profile --name mybrain-cn -y
-   ```
+- 使用 full-history clone；浅克隆不能证明上游基线关系。
+- 安装仓库要求的 Bun 与依赖。
+- Brain workspace、GBrain state root、备份目录使用绝对路径。
+- 首次只使用合成资料或用户明确选择的少量 `personal_private` 资料。
+- 不导入组织受限或客户机密。
 
-The interactive command refuses non-TTY input. Existing `plan` and `init` commands remain available for reviewed automation using an explicit answers file and confirmation hash.
+## 2. 执行原生 Bootstrap
 
-## 2. Classify before intake
+让 Claude Code、Codex 或 opencode 完整阅读：
 
-Use `public` or `personal_private` for the first narrow workflow. `work_authorized` requires an independently registered source and explicit organizational authorization; the automatic personal intake path refuses it. `org_restricted` and `client_or_secret` are always blocked. Never place credentials in source material, the answers file, Git, tests, or the public Hermes package.
+- 仓库根目录 `BOOTSTRAP_FOR_AGENTS.md`
+- `distributions/mybrain-cn/BOOTSTRAP_FOR_AGENTS.md`
 
-## 3. First test
+运行：
 
-Choose one synthetic or explicitly authorized note, then run `intake --sync` and `meeting-prep`. Pass only if the response contains relevant sourced context, names a visible unknown, and does not introduce unsupported facts. Run `doctor` after initialization. Do not start with a bulk import.
+```bash
+gbrain bootstrap status --json
+```
 
-## 4. Fail-stop procedure
+按 CLI 返回的阶段执行，不跳过原生 Interview 完整回读与 confirmation hash。中文职业边界写入同一份 `state/interview.json`。
 
-Stop immediately if classification is unclear, a target path differs from the final readback, the confirmation hash changes, the MCP starts without source guard, a restricted file is staged, retrieval invents context, or backup detects a live lock. Preserve logs and receipts without copying private note contents into public issues. Diagnose before retrying; do not use `--force` until the exact isolated target is reviewed.
+## 3. 原生 Render 后激活发行版
 
-## 5. Export and delete
+```bash
+mybrain-cn activate \
+  --workspace <absolute-workspace> \
+  --state-root <absolute-gbrain-state-root>
+```
 
-- Export: stop GBrain/Hermes writes, run `backup`, then `backup-verify`. Treat the backup as a sensitive asset because its PGLite database may contain private data and runtime authorization records.
-- Delete one source item: remove the staged Markdown and provenance record in the private workspace, commit that deletion, run an explicit full sync, and verify recall no longer returns it. Use GBrain's supported page/forget operations for atomic facts and verify with a fresh read.
-- Delete the whole installation: first create and verify an export if retention is desired; stop all processes; resolve and review the exact workspace, state-root, and installed Hermes profile targets; then remove them using the platform's normal profile/delete and filesystem controls. This overlay intentionally provides no broad recursive wipe command.
+检查输出：
 
-## 6. Recovery
+- `native_confirmation_hash` 与原生 Interview 一致
+- Schema 为 `mybrain-cn-executive`
+- Skills 恰好 8 个
+- `state/mybrain-cn.json` 已生成
+- 没有 `MYBRAIN.md`、自建 answers 或静态 Profile
 
-1. Stop the MCP/GBrain process. A live PGLite lock must fail backup closed.
-2. Run `backup-verify --backup <absolute-backup-path>`.
-3. Restore to new, isolated absolute workspace and state-root paths without `--force`.
-4. Reconnect runtime credentials separately; backups intentionally redact configuration credentials.
-5. Run `doctor`, recall one known synthetic/test page, and verify a known correction in a fresh process before switching the runtime to the restored state.
+## 4. 返回原生 repo 与 verify
 
-## 7. Known boundaries
+继续执行 GBrain 原生 wire、repo、verify 阶段。最终运行：
 
-P1.1 covers local single-user PGLite, an installable public Hermes profile, explicit-source intake, bounded MEMORY_VERBS MCP, and operator-guided recovery. It does not prove a clean-machine install, real Day 7 value, multi-user operation, remote Postgres, SSO, enterprise audit, Feishu/WeChat connectors, legal compliance, or China data residency. Human acceptance evidence remains `not-run` until a real operator records it without copying private content into this repository.
+```bash
+gbrain bootstrap verify
+mybrain-cn verify \
+  --workspace <absolute-workspace> \
+  --state-root <absolute-gbrain-state-root>
+```
+
+两条命令都退出 0 才能进入真实资料测试。
+
+## 5. 接入用户选择的宿主
+
+- Claude Code、Codex、opencode：使用原生 wiring。
+- Hermes：`mybrain-cn runtime hermes ...`
+- WorkBuddy：`mybrain-cn runtime workbuddy ...`
+- DeepSeek Harness：`mybrain-cn runtime deepseek-harness ...`
+- Feishu Aily：只生成远程登记交接。
+- 豆包桌面版：当前不接入。
+
+Adapter 只在 Bootstrap 后执行。它不能创建用户身份，也不能触发另一套 Onboarding。
+
+## 6. 资料与第一条回路
+
+选择 3–5 份低风险资料：
+
+```bash
+mybrain-cn intake \
+  --file <absolute-file> \
+  --workspace <absolute-workspace> \
+  --class personal_private \
+  --sync \
+  --state-root <absolute-gbrain-state-root>
+```
+
+然后运行真实会前准备：
+
+```bash
+mybrain-cn meeting-prep \
+  --query "会议对象 项目 关键决定 未完成承诺" \
+  --state-root <absolute-gbrain-state-root>
+```
+
+记录四件事：找回了什么、缺什么、哪条来源支撑结论、输出改变了哪个下一步。
+
+## 7. 纠正回路
+
+```bash
+mybrain-cn correct \
+  --fact "用户明确纠正的事实" \
+  --provenance "纠正发生的会话或材料" \
+  --state-root <absolute-gbrain-state-root>
+```
+
+关闭当前会话，在新会话重问同一事实。只有纠正能被正确读回，才算跨会话成立。
+
+## 8. 备份恢复
+
+停止 GBrain / MCP server 后执行：
+
+```bash
+mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>
+mybrain-cn backup-verify --backup <abs>
+mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs>
+```
+
+在隔离恢复目录重新检索页面与纠正。不得在原目录上做恢复演练。
+
+## 9. 停止条件
+
+出现以下任一情况，停止并修复：
+
+- 原生 Interview 未确认
+- `agent.json` 未初始化
+- Schema 或 Skillpack 漂移
+- source 与 `agent.json.source_id` 不一致
+- 受限资料进入默认个人 source
+- Adapter 覆盖已有配置
+- 两条 verify 任一失败
+- 备份校验失败
+
+## 10. 上线证据
+
+自动化发布门禁：仓库根 `bun run typecheck && bun run verify`，发行版目录 `bun run release`，再在全新 full-history clone 重跑。
+
+真人门禁：Day 1 会前准备、跨会话纠正、Day 7 重复使用、非开发者独立安装或恢复、国内宿主现场账号回路。

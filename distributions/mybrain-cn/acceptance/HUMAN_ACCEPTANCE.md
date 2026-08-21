@@ -1,36 +1,34 @@
-# @MyBrain P1.1 Human Acceptance Pack
+# @MyBrain CN Human Acceptance Pack
 
-This pack is a protocol and blank evidence template, not a claim that human acceptance has happened. Do not put names, meeting content, credentials, or other user data in the public repository. Store completed evidence in the private project control plane and reference only redacted receipt IDs here if needed.
+自动化 release gate 完成后，按以下顺序做真人验收。所有状态默认为 `not-run`，没有证据不得改成 PASS。
 
-## Global rules
+## HA-01｜Day 1 会前准备
 
-- One accountable human operator records start/end time, environment class, command/version identifiers, redacted receipt paths, observed result, and exceptions.
-- `PASS` requires every scenario-specific rule. `FAIL` applies when any required rule fails or evidence is missing. `NOT_RUN` is the initial and honest status.
-- Synthetic fixtures may prove mechanics but cannot prove Day 1 usefulness or Day 7 behavior change.
-- Stop on ambiguous data ownership, restricted/client-secret content, unexpected target paths, hash drift, unsupported claims, or recovery checksum failure.
+- 选择一场真实会议。
+- 只导入用户点名的 3–5 份低风险资料。
+- 检查来源、未知、冲突和下一步。
+- PASS：输出改变一个真实准备动作，且没有虚构来源。
 
-## HA-01 — Day 1 meeting prep
+## HA-02｜跨会话纠正
 
-Use one real but authorized, narrowly selected meeting-prep source. Record the source class without recording its contents, the intake receipt ID, query time, result receipt, operator usefulness judgment, unsupported-claim count, visible unknowns, and action chosen.
+- 用户明确纠正一条事实。
+- 关闭当前会话。
+- 在新会话重问同一问题。
+- PASS：Agent 使用新事实，不复述旧错误，并保留纠正来源。
 
-Pass only if intake was explicit, classification was allowed, the output restored at least one useful sourced fact or commitment, exposed at least one unknown/boundary, produced no unsupported consequential claim, and changed or confirmed a concrete meeting action. Otherwise fail.
+## HA-03｜Day 7 重复使用
 
-## HA-02 — Cross-session correction retrieval
+- 七天内再次运行同一 Hero Loop。
+- PASS：用户主动再次使用，找回内容仍准确，输出仍改变下一步。
 
-Correct one non-sensitive factual detail, close the session/process, open a fresh process, and retrieve it. Record write receipt, process/session boundary evidence, read receipt, old/new truth handling, provenance visibility, and latency.
+## HA-04｜非开发者安装或恢复
 
-Pass only if the correction is returned in the fresh process, the stale claim is not presented as current truth, and provenance is visible. A successful write without fresh-process readback fails.
+- 由未参与实现的人按 `OPERATOR_RUNBOOK.md` 执行。
+- PASS：不依赖口头补丁，能完成原生 Bootstrap、发行版激活、双 verify 或隔离恢复。
 
-## HA-03 — Backup and recovery
+## HA-05｜国内宿主现场回路
 
-Stop writes, create and verify a backup, restore into isolated targets, reconnect credentials separately, run doctor, and retrieve one known page plus the correction. Record lock state, manifest/checksum receipt, isolated paths (redacted), restore receipt, doctor result, retrieval receipts, and whether credentials were absent from exported config.
+- 选择 WorkBuddy 或 DeepSeek Harness 的真实客户端与账号。
+- PASS：完成配置、启动、一次 Brain 调用、断线恢复；记录客户端版本和证据。
 
-Pass only if backup refused any live lock, every checksum passed, restore used isolated targets, doctor passed, both page and correction were retrievable, and credentials were not restored from exported config. Otherwise fail.
-
-## HA-04 — Day 7 action/judgment change
-
-On or after seven calendar days from Day 1, compare the initial intended action/judgment with current behavior using the weekly-evolution loop. Record dates, the original receipt reference, new evidence references, correction/reversal evidence, operator explanation, and one observed action or judgment change (or an explicit evidence-backed decision not to change).
-
-Pass only if seven days elapsed, the comparison uses retrievable evidence from both periods, and the operator can identify a concrete action/judgment difference or an evidence-backed decision to hold course. Content volume, number of captured notes, or synthetic replay alone does not pass.
-
-The committed template status for HA-04 must remain `not-run`; this repository does not claim a real Day 7 result.
+Hermes 也需要真人聊天回路，但不能拿 Hermes 的成功替代其他宿主现场测试。豆包桌面版在官方接入接口确认前不进入测试。

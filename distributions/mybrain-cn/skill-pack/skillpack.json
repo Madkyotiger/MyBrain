@@ -1,0 +1,21 @@
+{
+  "api_version": "gbrain-skillpack-v1",
+  "name": "mybrain-cn-executive",
+  "version": "0.2.0",
+  "description": "Chinese executive work loops for an agent workspace backed by GBrain.",
+  "author": "@MyBrain maintainers",
+  "license": "MIT",
+  "homepage": "https://github.com/Madkyotiger/MyBrain/tree/master/distributions/mybrain-cn/skill-pack",
+  "gbrain_min_version": "0.46.24.0",
+  "skills": [
+    "skills/source-grounded-recall",
+    "skills/meeting-prep",
+    "skills/project-brief",
+    "skills/decision-journal",
+    "skills/commitment-tracker",
+    "skills/relationship-context",
+    "skills/weekly-evolution",
+    "skills/correction-loop"
+  ],
+  "schema_pack": "mybrain-cn-executive"
+}

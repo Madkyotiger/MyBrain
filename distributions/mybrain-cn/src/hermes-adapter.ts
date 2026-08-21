@@ -2,10 +2,12 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, resolve } from 'node:path';
 import yaml from 'js-yaml';
 import { GBRAIN_CLI, requireAbsolute } from './common.ts';
+import { resolveNativeSourceId } from './native-workspace.ts';
 
 export interface HermesAdapterOptions {
   configPath: string;
   stateRoot: string;
+  workspace: string;
   sourceId?: string;
   gbrainCli?: string;
   force?: boolean;
@@ -32,6 +34,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 export function configureHermesAdapter(options: HermesAdapterOptions): HermesAdapterReceipt {
   const configPath = requireAbsolute(options.configPath, 'Hermes config path');
   const stateRoot = requireAbsolute(options.stateRoot, 'GBrain state root');
+  const { sourceId } = resolveNativeSourceId(options.workspace, options.sourceId);
   const gbrainCli = requireAbsolute(options.gbrainCli ?? GBRAIN_CLI, 'GBrain CLI path');
   const original = existsSync(configPath) ? readFileSync(configPath, 'utf8') : '';
   const parsed = original.trim() ? asRecord(yaml.load(original)) : {};
@@ -46,7 +49,7 @@ export function configureHermesAdapter(options: HermesAdapterOptions): HermesAda
     args: ['run', gbrainCli, 'serve', '--surface', 'verbs', '--source-guard'],
     env: {
       GBRAIN_HOME: stateRoot,
-      GBRAIN_SOURCE: options.sourceId ?? 'default',
+      GBRAIN_SOURCE: sourceId,
       GBRAIN_SWEEP: '0',
     },
     enabled: true,
