@@ -13,9 +13,9 @@ function readJson(rel: string): JsonObject {
 export function validateP1() {
   const p0 = validateP0();
   const manifest = readJson('manifest.json');
-  if (!['mybrain-cn-p1-v1', 'mybrain-cn-p1.1-v1'].includes(manifest.schema_version) ||
-      !['p1-candidate', 'p1.1-candidate'].includes(manifest.status)) {
-    throw new Error('P1 manifest must retain a P1/P1.1 candidate state');
+  if (!['mybrain-cn-p1-v1', 'mybrain-cn-p1.1-v1', 'mybrain-cn-p1.2-v1'].includes(manifest.schema_version) ||
+      !['p1-candidate', 'p1.1-candidate', 'p1.2-candidate'].includes(manifest.status)) {
+    throw new Error('P1 manifest must retain a P1/P1.1/P1.2 candidate state');
   }
   if (manifest.p1?.default_runtime !== 'hermes' || manifest.p1?.mcp_surface !== 'verbs') {
     throw new Error('P1 must stay Hermes-first and expose the bounded verbs surface');

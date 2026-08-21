@@ -65,8 +65,8 @@ export async function runInteractiveOnboarding(options: InteractiveOnboardingOpt
     brain_name: required(await io.ask('第 1 轮｜这个工作脑叫什么？（必答）：'), '工作脑名称'),
     purpose: required(await io.ask('第 1 轮｜它首先要解决什么工作？（必答）：'), '首要用途'),
     runtime: choice(
-      await io.ask('第 1 轮｜运行时选择 hermes / claude-code / codex（必答）：'),
-      ['hermes', 'claude-code', 'codex'] as const,
+      await io.ask('第 1 轮｜运行时选择 hermes / workbuddy / deepseek-harness / claude-code / codex（必答）：'),
+      ['hermes', 'workbuddy', 'deepseek-harness', 'claude-code', 'codex'] as const,
       '运行时',
     ),
   };
@@ -107,6 +107,12 @@ export async function runInteractiveOnboarding(options: InteractiveOnboardingOpt
     hermes_config: round1.runtime === 'hermes'
       ? requireAbsolute(required(await io.ask('第 3 轮｜Hermes config.yaml 绝对路径（必答）：'), 'Hermes config'), 'Hermes config')
       : undefined,
+    workbuddy_config: round1.runtime === 'workbuddy'
+      ? requireAbsolute(required(await io.ask('第 3 轮｜WorkBuddy .mcp.json 绝对路径（必答）：'), 'WorkBuddy config'), 'WorkBuddy config')
+      : undefined,
+    deepseek_harness_patch: round1.runtime === 'deepseek-harness'
+      ? requireAbsolute(required(await io.ask('第 3 轮｜DeepSeek Harness cordis.patch.yml 绝对路径（必答）：'), 'DeepSeek Harness patch'), 'DeepSeek Harness patch')
+      : undefined,
     backup_output: optionalAbsolute(await io.ask('第 3 轮｜计划使用的备份目录绝对路径（可跳过）：'), '备份目录'),
     answers_path: requireAbsolute(
       required(await io.ask('第 3 轮｜保存 onboarding answers 的绝对路径（必答）：'), 'answers path'),
@@ -142,6 +148,8 @@ export async function runInteractiveOnboarding(options: InteractiveOnboardingOpt
       workspace: round3.workspace,
       state_root: round3.state_root,
       ...(round3.hermes_config ? { hermes_config: round3.hermes_config } : {}),
+      ...(round3.workbuddy_config ? { workbuddy_config: round3.workbuddy_config } : {}),
+      ...(round3.deepseek_harness_patch ? { deepseek_harness_patch: round3.deepseek_harness_patch } : {}),
       ...(round3.backup_output ? { backup_output: round3.backup_output } : {}),
     },
   } satisfies OnboardingAnswers);
@@ -163,6 +171,8 @@ export async function runInteractiveOnboarding(options: InteractiveOnboardingOpt
     stateRoot: round3.state_root,
     confirmationHash: plan.confirmation_hash,
     hermesConfig: round3.hermes_config,
+    workbuddyConfig: round3.workbuddy_config,
+    deepseekHarnessPatch: round3.deepseek_harness_patch,
     gbrainCli: options.gbrainCli,
     force: options.force,
   });

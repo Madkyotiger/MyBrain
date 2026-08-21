@@ -2,11 +2,12 @@
 
 @MyBrain 不是另造一个 GBrain，也不是把某个人的私有 Brain 复制给别人。它做的是更难但更有用的一层：把上游引擎收束成中国管理者能安全上手、能跨会话用、出了问题能恢复的个人专业 Brain。
 
-## P1.1 现在能做什么
+## P1.2 现在能做什么
 
 - 从一份经过确认的 onboarding answers，建立本地私有 workspace 与 PGLite Brain。
 - 安装 `mybrain-cn-executive` Schema Pack 和 8 个工作入口，不向新用户倾倒 70 个 Skill。
-- 生成 Hermes MCP adapter；GBrain 仍通过标准 MCP 保持 runtime-neutral。
+- 为 Hermes、WorkBuddy 与 DeepSeek Harness 生成各自原生配置形态的 bounded stdio MCP adapter。
+- 为豆包工作伙伴生成无凭据的 Streamable HTTP 登记交接；远程 server、认证与数据驻留仍是独立 gate。
 - 只导入用户明确选择的 `.md`、`.txt`、`.json`；每份材料保留 hash、来源和数据分级。
 - 在导入前阻断 `org_restricted` 与 `client_or_secret`。
 - 跑通第一条会前准备回路，并在中文组合词过严时做有边界的分词回退。
@@ -26,7 +27,7 @@ cd distributions/mybrain-cn
 bun src/cli.ts onboard
 ```
 
-命令分三轮询问“用途/运行时”“数据边界/来源”“首个回路/运行细节”。必答题为空或选择非法会直接停止；每轮和最终回读都必须输入 `确认`。Answers 保存并显示 plan/hash 后，还必须另行输入大写 `INSTALL` 才初始化。非交互环境会拒绝此命令，可继续使用下面原有的显式 `plan` / `init` 流程。
+命令分三轮询问“用途/运行时”“数据边界/来源”“首个回路/运行细节”。本地运行时可选 Hermes、WorkBuddy、DeepSeek Harness、Claude Code 或 Codex；只有前三种已有本 distribution 的配置 adapter。必答题为空或选择非法会直接停止；每轮和最终回读都必须输入 `确认`。Answers 保存并显示 plan/hash 后，还必须另行输入大写 `INSTALL` 才初始化。非交互环境会拒绝此命令，可继续使用下面原有的显式 `plan` / `init` 流程。
 
 ```bash
 cd distributions/mybrain-cn
@@ -47,6 +48,21 @@ bun src/cli.ts init \
 ```
 
 初始化不会打开 embedding，也不会索取 API Key。先让本地 keyword/CJK 路径跑起来；需要外部模型时，再按数据边界单独决定。
+
+## 国内 Agent 接入
+
+```bash
+# WorkBuddy：写入明确指定的用户或项目 .mcp.json
+bun src/cli.ts runtime workbuddy --config <abs> --state-root <abs>
+
+# DeepSeek Harness：写入明确指定的 cordis.patch.yml
+bun src/cli.ts runtime deepseek-harness --patch <abs> --workspace <abs> --state-root <abs>
+
+# 豆包工作伙伴：只生成远程 MCP 登记交接，不部署 server
+bun src/cli.ts runtime doubao-work --url https://brain.example.com/mcp --output <abs>
+```
+
+详细配置、官方依据与 live proof 边界见 `AGENT_HOSTS.md`。当前机器没有 WorkBuddy 或 DSH，因此这两项只声明 adapter 自动化验证，不声明客户端已现场跑通。豆包工作伙伴还需要 HTTPS 托管、认证、企业权限与数据驻留评估。
 
 ## 公开 Hermes Profile
 
@@ -94,12 +110,13 @@ bun src/cli.ts restore --backup <abs> --target-workspace <abs> --target-state-ro
 bun run p0
 bun run p1
 bun run p1.1
+bun run p1.2
 ```
 
-P1 会真实执行 fresh install、Schema validation、stdio MCP conformance、中文会前检索、阻断测试、跨进程 correction 回读，以及 backup → isolated restore。P1.1 追加交互门控、public-profile privacy/config/8-skill 验证，以及当前 Hermes 的隔离本地目录安装。全部自动化测试使用合成材料，不读取任何人的真实 Brain。
+P1 会真实执行 fresh install、Schema validation、stdio MCP conformance、中文会前检索、阻断测试、跨进程 correction 回读，以及 backup → isolated restore。P1.1 追加交互门控、public-profile privacy/config/8-skill 验证，以及当前 Hermes 的隔离本地目录安装。P1.2 追加 WorkBuddy JSONC 配置保真、DeepSeek Harness patch 合并、豆包远程登记安全拒绝与 @MyBrain 公开身份校验。全部自动化测试使用合成材料，不读取任何人的真实 Brain。
 
 ## 当前边界
 
-**这是单用户、可安装的 P1.1 candidate，不是多人产品已经成立。** 没有声称 clean-machine proof，也没有声称真人 Day 7 已通过。两条 Hero Loop 的真实重复使用、非产品发起人的独立安装/恢复、以及非创始人 support owner，仍是进入 P2 多用户 pilot 前必须补的证据。
+**这是单用户、可安装的 P1.2 candidate，不是多人产品已经成立。** 没有声称 clean-machine proof；真人 Day 7 状态仍是 `not-run`。三种国内 Agent 的配置入口已经分开落地，但 live client / account round-trip 尚未完成。两条 Hero Loop 的真实重复使用、非产品发起人的独立安装/恢复、以及非创始人 support owner，仍是进入 P2 多用户 pilot 前必须补的证据。
 
 远程 Postgres、企业权限、飞书/微信连接器、SSO、审计和境内数据驻留不在 P1 的已解决范围内。

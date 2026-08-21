@@ -1,6 +1,6 @@
 {
-  "schema_version": "mybrain-cn-p1.1-v1",
-  "status": "p1.1-candidate",
+  "schema_version": "mybrain-cn-p1.2-v1",
+  "status": "p1.2-candidate",
   "generated_on": "2026-08-21",
   "upstream": {
     "repository": "https://github.com/garrytan/gbrain.git",
@@ -10,7 +10,7 @@
   "fork": {
     "repository": "https://github.com/Madkyotiger/MyBrain.git",
     "branch": "master",
-    "allowed_delta_prefixes": ["distributions/mybrain-cn/"]
+    "allowed_delta_prefixes": ["README.md", "distributions/mybrain-cn/"]
   },
   "product": {
     "primary_user": "China-based senior brand, marketing, advertising, consulting, or professional-services leader",
@@ -30,6 +30,7 @@
   "architecture": {
     "core_owner": "garrytan/gbrain",
     "distribution_owner": "Madkyotiger/MyBrain:distributions/mybrain-cn",
+    "public_front_door_owner": "Madkyotiger/MyBrain:README.md",
     "user_data_owner": "each user's private brain",
     "core_policy": "overlay-first"
   },
@@ -107,5 +108,36 @@
     ],
     "human_acceptance": "not-run",
     "clean_machine_proof": "not-claimed"
+  },
+  "p1_2": {
+    "scope": "mybrain-public-identity-and-mainland-agent-host-compatibility",
+    "required_files": [
+      "AGENT_HOSTS.md",
+      "src/workbuddy-adapter.ts",
+      "src/deepseek-harness-adapter.ts",
+      "src/doubao-work-handoff.ts",
+      "scripts/validate-p1-2.ts",
+      "tests/p1-2-hosts.test.ts"
+    ],
+    "host_support": {
+      "hermes": {
+        "mode": "local-profile-and-stdio-mcp",
+        "status": "verified-automated"
+      },
+      "workbuddy": {
+        "mode": "jsonc-stdio-mcp-adapter",
+        "status": "adapter-verified-live-client-not-run"
+      },
+      "deepseek-harness": {
+        "mode": "cordis-patch-stdio-mcp-adapter",
+        "status": "developer-preview-adapter-verified-live-client-not-run"
+      },
+      "doubao-work": {
+        "mode": "streamable-http-registration-handoff",
+        "status": "handoff-verified-remote-runtime-not-supplied"
+      }
+    },
+    "public_identity": "root README and GitHub description are owned by @MyBrain",
+    "live_non_hermes_clients": "not-run"
   }
 }

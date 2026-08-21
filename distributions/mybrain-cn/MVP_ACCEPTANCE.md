@@ -1,4 +1,4 @@
-# P0 / P1 / P1.1 验收
+# P0 / P1 / P1.1 / P1.2 验收
 
 ## P0：方向与边界
 
@@ -16,7 +16,7 @@
 | ID | 必须为真 | 状态 | 真实 proof |
 |---|---|---|---|
 | P1-01 | 全新环境能建 PGLite、Schema、8 Skills 与 Hermes adapter | PASS | isolated fresh install |
-| P1-02 | Hermes 接到的不是假配置，而是可启动的 MCP | PASS | 真实 stdio endpoint，MEMORY_VERBS conformance 通过 |
+| P1-02 | Hermes 接到的不是假配置，而是可启动的 MCP | PASS | 真实 stdio endpoint，MEMORY_VERBS conformance PASS |
 | P1-03 | 明确选择的中文材料能支撑第一条会前回路 | PASS | intake → sync → meeting-prep |
 | P1-04 | 受限组织资料与客户机密在落盘前被阻断 | PASS | fail-closed intake test |
 | P1-05 | correction 能跨新进程读回 | PASS | remember → fresh process recall |
@@ -37,11 +37,23 @@ P1 的 Accountable Owner 已在私有项目控制面明确；MK 是 Builder / Op
 
 真人 Day 1 / Day 7、非 Builder 独立恢复和 clean-machine 安装仍未证明。`acceptance/p1.1-evidence-template.json` 的四项状态均为 `not-run`，不能用合成自动化结果替代。
 
+## P1.2：项目身份与国内 Agent 接入
+
+| ID | 必须为真 | 状态 | 证据边界 |
+|---|---|---|---|
+| P1.2-01 | 公开项目入口属于 @MyBrain，不再沿用上游个人介绍与联系方式 | PASS | 根 README + GitHub description |
+| P1.2-02 | WorkBuddy 配置能保留注释与无关 server，冲突时默认拒绝 | PASS-AUTOMATED | `workbuddy-adapter.ts` + host tests |
+| P1.2-03 | DeepSeek Harness patch 使用官方 MCP client 结构并保留无关 operation | PASS-AUTOMATED-PREVIEW | `deepseek-harness-adapter.ts` + host tests |
+| P1.2-04 | 豆包工作伙伴只收到安全的远程登记包，不虚构本地 adapter 或远程部署 | PASS-HANDOFF | `doubao-work-handoff.ts` + host tests |
+| P1.2-05 | 三个国内客户端都完成真人账号 round-trip | PENDING-LIVE | 本机没有 WorkBuddy / DSH；豆包远程托管未建 |
+
+配置 proof 和 live client proof 是两件事。P1.2 只把前者做到可重复验证；P1.2-05 不得被自动化结果改写为 PASS。
+
 ## 还没有被证明的事
 
 - 两条以上 Hero Loops 在真实工作中出现重复使用。
 - 非产品发起人可以不依赖 Builder，独立完成安装、恢复和常见故障处理。
-- 飞书、微信、远程 Postgres、企业权限与数据驻留已经解决。
+- 飞书、微信、远程 Postgres、企业权限与数据驻留已经解决；豆包登记交接不等于这些问题已解决。
 - 合成验收等于产品市场成立。
 
 因此当前状态是 **P1 candidate**，不是“通用 Brain 已经可以大规模交付”。下一阶段的真正工作不是继续加 Skill，而是拿真实用户证明迁移性与重复使用。

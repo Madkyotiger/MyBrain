@@ -30,6 +30,13 @@
     { "id": "P1.1-05", "status": "pass", "outcome": "current Hermes local-directory profile install semantics pass in isolation" },
     { "id": "P1.1-06", "status": "pass", "outcome": "operator runbook and blank four-scenario human acceptance protocol exist" }
   ],
+  "p1_2_build": [
+    { "id": "P1.2-01", "status": "pass", "outcome": "public README and repository description use @MyBrain identity while retaining upstream attribution" },
+    { "id": "P1.2-02", "status": "pass-automated", "outcome": "WorkBuddy JSONC adapter preserves unrelated config and writes bounded stdio MCP" },
+    { "id": "P1.2-03", "status": "pass-automated-preview", "outcome": "DeepSeek Harness patch adapter uses the official MCP client structure; live preview client not run" },
+    { "id": "P1.2-04", "status": "pass-handoff", "outcome": "Doubao Work handoff rejects unsafe endpoints and contains no credential or remote deployment claim" },
+    { "id": "P1.2-05", "status": "pending-live-clients", "outcome": "real WorkBuddy, DeepSeek Harness, and Doubao Work account round-trips" }
+  ],
   "mvp": [
     { "id": "MVP-01", "status": "pass-synthetic", "outcome": "fresh-session memory round-trip" },
     { "id": "MVP-02", "status": "pending-real-use", "outcome": "two hero loops repeat in real use" },

@@ -14,6 +14,13 @@ import {
 } from './common.ts';
 import { runGbrain } from './gbrain-runtime.ts';
 import { configureHermesAdapter, type HermesAdapterReceipt } from './hermes-adapter.ts';
+import { configureWorkBuddyAdapter, type WorkBuddyAdapterReceipt } from './workbuddy-adapter.ts';
+import {
+  configureDeepSeekHarnessAdapter,
+  type DeepSeekHarnessAdapterReceipt,
+} from './deepseek-harness-adapter.ts';
+
+export type LocalAgentRuntime = 'hermes' | 'workbuddy' | 'deepseek-harness' | 'claude-code' | 'codex';
 
 export interface OnboardingAnswers {
   schema_version: 'mybrain-cn-onboarding-v1';
@@ -26,7 +33,7 @@ export interface OnboardingAnswers {
   brain: {
     name: string;
     primary_jobs: string[];
-    default_runtime: 'hermes' | 'claude-code' | 'codex';
+    default_runtime: LocalAgentRuntime;
     source_id?: string;
   };
   boundaries: {
@@ -41,6 +48,8 @@ export interface OnboardingAnswers {
     workspace: string;
     state_root: string;
     hermes_config?: string;
+    workbuddy_config?: string;
+    deepseek_harness_patch?: string;
     backup_output?: string;
   };
 }
@@ -51,6 +60,8 @@ export interface InitOptions {
   stateRoot: string;
   confirmationHash: string;
   hermesConfig?: string;
+  workbuddyConfig?: string;
+  deepseekHarnessPatch?: string;
   gbrainCli?: string;
   force?: boolean;
 }
@@ -64,7 +75,9 @@ export function validateAnswers(value: unknown): OnboardingAnswers {
   if (!a.brain?.name?.trim() || !Array.isArray(a.brain.primary_jobs) || a.brain.primary_jobs.length === 0) {
     throw new Error('brain.name and at least one brain.primary_jobs entry are required.');
   }
-  if (!['hermes', 'claude-code', 'codex'].includes(a.brain.default_runtime ?? '')) throw new Error('Unsupported default runtime.');
+  if (!['hermes', 'workbuddy', 'deepseek-harness', 'claude-code', 'codex'].includes(a.brain.default_runtime ?? '')) {
+    throw new Error('Unsupported default runtime.');
+  }
   safeId(a.brain.source_id ?? 'default', 'brain.source_id');
   const allowed = new Set(a.boundaries?.allowed_data_classes ?? []);
   if (!allowed.has('personal_private')) throw new Error('P1 requires personal_private in allowed_data_classes.');
@@ -89,6 +102,16 @@ export function validateAnswers(value: unknown): OnboardingAnswers {
     if (a.brain.default_runtime === 'hermes') {
       if (!a.setup.hermes_config) throw new Error('setup.hermes_config is required for the Hermes runtime.');
       requireAbsolute(a.setup.hermes_config, 'setup.hermes_config');
+    }
+    if (a.brain.default_runtime === 'workbuddy') {
+      if (!a.setup.workbuddy_config) throw new Error('setup.workbuddy_config is required for the WorkBuddy runtime.');
+      requireAbsolute(a.setup.workbuddy_config, 'setup.workbuddy_config');
+    }
+    if (a.brain.default_runtime === 'deepseek-harness') {
+      if (!a.setup.deepseek_harness_patch) {
+        throw new Error('setup.deepseek_harness_patch is required for the DeepSeek Harness runtime.');
+      }
+      requireAbsolute(a.setup.deepseek_harness_patch, 'setup.deepseek_harness_patch');
     }
   }
   return a as OnboardingAnswers;
@@ -116,6 +139,8 @@ export function onboardingPlan(answers: OnboardingAnswers, workspace: string, st
       'install-mybrain-cn-executive-schema',
       'initialize-local-pglite-without-embeddings',
       ...(answers.brain.default_runtime === 'hermes' ? ['write-explicit-hermes-mcp-adapter'] : []),
+      ...(answers.brain.default_runtime === 'workbuddy' ? ['write-explicit-workbuddy-mcp-adapter'] : []),
+      ...(answers.brain.default_runtime === 'deepseek-harness' ? ['write-explicit-deepseek-harness-mcp-patch'] : []),
     ],
     blocked_by_default: ['org_restricted', 'client_or_secret', 'automatic-bulk-import'],
   };
@@ -188,11 +213,36 @@ export function initializeMyBrain(options: InitOptions) {
   );
 
   let hermes: HermesAdapterReceipt | null = null;
+  let workbuddy: WorkBuddyAdapterReceipt | null = null;
+  let deepseekHarness: DeepSeekHarnessAdapterReceipt | null = null;
   if (answers.brain.default_runtime === 'hermes') {
     if (!options.hermesConfig) throw new Error('Hermes is the selected runtime; pass an explicit --hermes-config path.');
     hermes = configureHermesAdapter({
       configPath: options.hermesConfig,
       stateRoot,
+      sourceId,
+      gbrainCli: options.gbrainCli,
+      force: options.force,
+    });
+  }
+  if (answers.brain.default_runtime === 'workbuddy') {
+    if (!options.workbuddyConfig) throw new Error('WorkBuddy is the selected runtime; pass an explicit --workbuddy-config path.');
+    workbuddy = configureWorkBuddyAdapter({
+      configPath: options.workbuddyConfig,
+      stateRoot,
+      sourceId,
+      gbrainCli: options.gbrainCli,
+      force: options.force,
+    });
+  }
+  if (answers.brain.default_runtime === 'deepseek-harness') {
+    if (!options.deepseekHarnessPatch) {
+      throw new Error('DeepSeek Harness is the selected runtime; pass an explicit --deepseek-harness-patch path.');
+    }
+    deepseekHarness = configureDeepSeekHarnessAdapter({
+      patchPath: options.deepseekHarnessPatch,
+      stateRoot,
+      workspace,
       sourceId,
       gbrainCli: options.gbrainCli,
       force: options.force,
@@ -209,6 +259,9 @@ export function initializeMyBrain(options: InitOptions) {
     skills_installed: 8,
     gbrain_init_exit: init.code,
     hermes,
+    workbuddy,
+    deepseek_harness: deepseekHarness,
+    runtime_adapter: hermes ?? workbuddy ?? deepseekHarness,
   };
   writeJson(join(workspace, '.mybrain-init-receipt.json'), receipt);
   return receipt;

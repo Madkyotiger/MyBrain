@@ -29,7 +29,7 @@
 ## 上游同步
 
 - `upstream/master` 是引擎基线。
-- `origin/master` 只保留上游提交加 `distributions/mybrain-cn/**` 差异。
+- `origin/master` 只保留上游提交、@MyBrain 根 README 与 `distributions/mybrain-cn/**` 差异。
 - 每次 P0/P1 发布前先 fetch 上游，记录 ahead/behind，再跑 `bun run p0`。
 - 如果未来必须改 core，改动要与 overlay 分开提交，便于上游吸收或回退。
 
@@ -44,12 +44,16 @@
 
 ## 部署边界
 
-P1 验证本地 PGLite + 私有 Git 的单用户安装路径，并以 Hermes 作为首选 runtime，通过 GBrain stdio MCP 的 `verbs` surface 接入。Hermes adapter 是 overlay；GBrain 协议本身保持 runtime-neutral。
+P1 验证本地 PGLite + 私有 Git 的单用户安装路径，并以 Hermes 作为首选 runtime，经 GBrain stdio MCP 的 `verbs` surface 接入。P1.2 增加 WorkBuddy JSONC adapter 与 DeepSeek Harness Cordis patch adapter；它们沿用同一 bounded stdio server，不改 GBrain Core。
+
+豆包工作伙伴是云端入口，只接受 SSE / Streamable HTTP 一类远程 MCP 登记。P1.2 只生成无凭据登记交接，不部署远程 server，也不把本地 PGLite 暴露到公网。远程托管、认证、权限与驻留 proof 未完成前，不声明 live compatibility。
 
 远程 Postgres、多人权限、飞书/微信连接器、企业 SSO、审计和中国境内数据驻留仍需要独立技术与法律评估；本 overlay 不声称已经解决。
+
+各 Agent 的配置形态、官方依据与验证边界见 `AGENT_HOSTS.md`。
 
 ## P1.1 交互与公开 Profile
 
 `src/interactive-onboarding.ts` 只编排 overlay 已有的 answers validator、plan/hash 与 initializer。终端 I/O 可注入；公开 CLI 只接受 TTY，非法或缺失输入停止。三轮确认和最终确认发生在写入前，answers 保存和 plan/hash 生成发生在独立 `INSTALL` 安装确认之前，因此拒绝安装仍可保留一份可审阅计划。
 
-`hermes-profile/` 是独立的 Hermes profile distribution package。它复制现有 8 个薄 Skill 入口，通过环境占位符指向用户私有 GBrain，不内嵌状态、凭据或机器路径。安装测试隔离 `HERMES_HOME`，证明当前本地目录安装语义；它不是 clean-machine proof。
+`hermes-profile/` 是独立的 Hermes profile distribution package。它复制现有 8 个薄 Skill 入口，使用环境占位符指向用户私有 GBrain，不内嵌状态、凭据或机器路径。安装测试隔离 `HERMES_HOME`，证明当前本地目录安装语义；它不是 clean-machine proof。

@@ -4,11 +4,14 @@ import { createBackup, restoreBackup, verifyBackup } from './backup.ts';
 import { buildMeetingPrep, recordCorrection } from './hero-loops.ts';
 import { intakeFile, type DataClass } from './intake.ts';
 import { configureHermesAdapter } from './hermes-adapter.ts';
+import { configureWorkBuddyAdapter } from './workbuddy-adapter.ts';
+import { configureDeepSeekHarnessAdapter } from './deepseek-harness-adapter.ts';
+import { createDoubaoWorkHandoff } from './doubao-work-handoff.ts';
 import { initializeMyBrain, loadAnswers, onboardingPlan } from './onboarding.ts';
 import { runGbrain } from './gbrain-runtime.ts';
 import { runTerminalOnboarding } from './interactive-onboarding.ts';
 
-const HELP = `@MyBrain P1.1\n\nUsage:\n  mybrain-cn onboard [--force]\n  mybrain-cn plan --answers <json> --workspace <abs> --state-root <abs>\n  mybrain-cn init --answers <json> --workspace <abs> --state-root <abs> --confirm-hash <sha256> --hermes-config <abs> [--force]\n  mybrain-cn runtime hermes --config <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> --source-id <id> [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs>\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nP1.1 defaults: explicit interactive confirmations, local PGLite, bounded MEMORY_VERBS, explicit-source intake, blocked restricted/client-secret data.\n`;
+const HELP = `@MyBrain P1.2\n\nUsage:\n  mybrain-cn onboard [--force]\n  mybrain-cn plan --answers <json> --workspace <abs> --state-root <abs>\n  mybrain-cn init --answers <json> --workspace <abs> --state-root <abs> --confirm-hash <sha256> [--hermes-config <abs> | --workbuddy-config <abs> | --deepseek-harness-patch <abs>] [--force]\n  mybrain-cn runtime hermes --config <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn runtime workbuddy --config <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn runtime deepseek-harness --patch <abs> --workspace <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn runtime doubao-work --url <https-url> --output <abs> [--auth-header Authorization]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> --source-id <id> [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs>\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nP1.2 defaults: explicit confirmations, local PGLite, bounded MEMORY_VERBS, explicit-source intake, blocked restricted/client-secret data. 豆包工作伙伴仅生成远程 MCP 登记交接，不部署远程服务。\n`;
 
 function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -40,20 +43,39 @@ async function main(): Promise<void> {
         stateRoot: requiredFlag(values, '--state-root'),
         confirmationHash: requiredFlag(values, '--confirm-hash'),
         hermesConfig: values.get('--hermes-config'),
+        workbuddyConfig: values.get('--workbuddy-config'),
+        deepseekHarnessPatch: values.get('--deepseek-harness-patch'),
         gbrainCli,
         force: booleans.has('--force'),
       }));
       return;
     }
     case 'runtime': {
-      if (positionals[0] !== 'hermes') throw new Error('P1 runtime adapter implemented: hermes.');
-      output(configureHermesAdapter({
-        configPath: requiredFlag(values, '--config'),
-        stateRoot: requiredFlag(values, '--state-root'),
-        sourceId: values.get('--source-id') ?? 'default',
-        gbrainCli,
-        force: booleans.has('--force'),
-      }));
+      const runtime = positionals[0];
+      if (runtime === 'hermes') {
+        output(configureHermesAdapter({
+          configPath: requiredFlag(values, '--config'), stateRoot: requiredFlag(values, '--state-root'),
+          sourceId: values.get('--source-id') ?? 'default', gbrainCli, force: booleans.has('--force'),
+        }));
+      } else if (runtime === 'workbuddy') {
+        output(configureWorkBuddyAdapter({
+          configPath: requiredFlag(values, '--config'), stateRoot: requiredFlag(values, '--state-root'),
+          sourceId: values.get('--source-id') ?? 'default', gbrainCli, force: booleans.has('--force'),
+        }));
+      } else if (runtime === 'deepseek-harness') {
+        output(configureDeepSeekHarnessAdapter({
+          patchPath: requiredFlag(values, '--patch'), workspace: requiredFlag(values, '--workspace'),
+          stateRoot: requiredFlag(values, '--state-root'), sourceId: values.get('--source-id') ?? 'default',
+          gbrainCli, force: booleans.has('--force'),
+        }));
+      } else if (runtime === 'doubao-work') {
+        output(createDoubaoWorkHandoff({
+          endpointUrl: requiredFlag(values, '--url'), outputPath: requiredFlag(values, '--output'),
+          authHeader: values.get('--auth-header'),
+        }));
+      } else {
+        throw new Error('Supported runtime targets: hermes, workbuddy, deepseek-harness, doubao-work.');
+      }
       return;
     }
     case 'intake': {

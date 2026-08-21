@@ -22,8 +22,9 @@ function directories(path: string): string[] {
 export function validateP11() {
   const p1 = validateP1();
   const manifest = readJson(join(ROOT, 'manifest.json'));
-  if (manifest.schema_version !== 'mybrain-cn-p1.1-v1' || manifest.status !== 'p1.1-candidate') {
-    throw new Error('P1.1 manifest must be mybrain-cn-p1.1-v1 / p1.1-candidate');
+  if (!['mybrain-cn-p1.1-v1', 'mybrain-cn-p1.2-v1'].includes(manifest.schema_version) ||
+      !['p1.1-candidate', 'p1.2-candidate'].includes(manifest.status)) {
+    throw new Error('P1.1 regression requires a P1.1/P1.2 candidate manifest');
   }
   for (const rel of manifest.p1_1?.required_files ?? []) {
     if (!existsSync(join(ROOT, rel))) throw new Error(`P1.1 required file missing: ${rel}`);

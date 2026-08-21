@@ -11,13 +11,14 @@
 - 已 fast-forward 到 upstream：`b99f4c8b07780d2469608b03c7c301bd2beef271`。
 - 同步后、写入 P0 前：ahead `0`，behind `0`。
 
-## P0 的唯一预期差异
+## 当前允许的产品差异
 
 ```text
+README.md
 distributions/mybrain-cn/**
 ```
 
-P0 不修改 `src/`、根级 Skill、数据库 migration、CLI 或 MCP。中国版能力先通过 schema、产品合同、数据策略和独立评测表达。
+根 README 是 @MyBrain 的公开入口，不再沿用上游作者身份与联系方式。其余产品能力留在 distribution overlay。上游 `src/`、根级 Skill、数据库 migration、CLI、MCP、License、历史和技术文档不改。
 
 ## 复查命令
 
@@ -30,4 +31,4 @@ cd distributions/mybrain-cn && bun run p0
 
 ## 何时接受 core divergence
 
-只有 `ARCHITECTURE.md` 的 Core Patch Gate 全部满足，才允许在 overlay 之外产生差异。否则修配置、修 schema、修 Skill 或修 onboarding，不在 fork 里养一套隐形引擎。
+只有 `ARCHITECTURE.md` 的 Core Patch Gate 全部满足，才允许在上述两个产品入口之外产生差异。否则修配置、修 schema、修 Skill 或修 onboarding，不在 fork 里养一套隐形引擎。
