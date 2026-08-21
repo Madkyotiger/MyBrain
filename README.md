@@ -1,73 +1,103 @@
 # @MyBrain
 
-**面向中国资深管理者的私人专业 Brain。** 它让 Agent 在新会话中找回有来源的工作上下文，并把未知、冲突与资料边界说清楚。
+**面向中国资深管理者的私人专业 Brain。** 它让 Agent 在新会话中找回有来源的工作上下文，记住明确纠正，并把未知、冲突与资料边界说清楚。
 
-@MyBrain 以 GBrain 为引擎基线，增加中国职业语境、中文访谈问法、数据分级、Executive Schema、精选工作能力与多宿主接入。它不复制任何人的私人 Brain，也不维护一套平行于 GBrain 的身份系统。
+> 当前状态：**engineering release candidate**。安装、身份、发行版激活、宿主 Adapter 与恢复机制已有自动化证据；真人 Day 1 / Day 7 价值验收尚未开始。
 
-## 生产架构
+## 产品模型
+
+MyBrain 是可拉取、可升级的产品源码与中国职业认知发行版。它不是任何用户的私人资料库。部署后，每位用户会得到自己拥有的独立 **User Brain**：独立 workspace、`agent.json`、本地 PGLite 与私人 Git 仓库。
 
 唯一安装与身份主链路是 GBrain 原生 Bootstrap：
 
 `preflight → engine → interview → render → skills → wire → repo → verify`
 
-@MyBrain 在原生 Interview 完整回读并确认、原生 Render 完成后，激活两类发行版资产：
+MyBrain 只在原生扩展点增加：
 
 - `mybrain-cn-executive` Schema Pack
 - 8 个 Executive Skills
+- 中文与中英混合检索
+- 五级数据边界与 fail-closed intake
+- 多宿主 Adapter、备份、校验与隔离恢复
 
-身份答案只保存在原生 `state/interview.json`；原生确认哈希是唯一确认凭证；`agent.json` 是唯一 workspace 身份清单。@MyBrain 不再提供自己的 `onboard / plan / init`，也不发布平行 Agent Profile。
+身份答案只保存在原生 `state/interview.json`；原生确认哈希是唯一确认凭证；`agent.json` 是唯一 workspace 身份清单。MyBrain 不维护平行的 Onboarding、数据库、身份文件或 repo 初始化流程。
+
+## Agent 部署支持
+
+| 宿主 | 部署方式 | 接线 | 当前口径 |
+|---|---|---|---|
+| Claude Code / Codex / opencode | Agent 驱动 GBrain 原生 Bootstrap | GBrain 原生 wire | 支持 |
+| Hermes Agent | 条件式自动；固定 `terminal.cwd` 时需手动修正一次 | MyBrain YAML stdio Adapter | 目标机验收 |
+| WorkBuddy / CodeBuddy Code | Agent 自动驱动 | MyBrain JSONC stdio Adapter | 支持候选，需客户端回读 |
+| DeepSeek Harness | 引导部署；sandbox 需本人确认 | MyBrain Cordis patch Adapter | developer preview |
+| Feishu Aily | 手动 | HTTPS MCP 登记交接 | 只生成登记包 |
+| 豆包桌面版 / 豆包工作 | 不支持 | 无已验证官方接口 | 等待官方 extension / MCP 能力 |
+
+不同宿主共享同一个 Brain 与同一份原生 Bootstrap 状态，不各自重做 Onboarding。完整自动步骤、手动前置与停止条件见 [`distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md`](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)。
+
+## 首次部署
+
+当前推荐验收路径是一台装有 Codex 的干净 MacBook：
+
+```bash
+git clone https://github.com/Madkyotiger/MyBrain.git
+cd MyBrain
+```
+
+用 Codex 打开产品 checkout，然后说：
+
+> 部署 MyBrain
+
+Codex 会读取仓库内 `AGENTS.md` 与部署合同，在默认的 `$HOME/MyBrain-Workspace` 或用户指定的独立目录运行 GBrain 原生 Bootstrap。它不得把身份访谈、资料或数据库写进产品源码。
+
+其他宿主的最短入口：
+
+- **Hermes**：先确认活动 Profile 的工具 cwd 真正指向产品 checkout；固定到其他路径时，按部署文档修正并重启会话。
+- **WorkBuddy / CodeBuddy Code**：在产品 checkout 启动 Agent 并说“部署 MyBrain”；结束前必须回读 MCP 配置。
+- **DeepSeek Harness**：把产品 checkout 与空 User Brain workspace 放进本人批准的同一部署父目录，再按文档完成 sandbox 前置。
+- **Feishu Aily**：先具备可审计的远程 HTTPS MCP、认证、租户权限与数据驻留方案；当前仓库只生成登记交接。
+
+已有 User Brain 换机器时，Clone 用户自己的私人仓库并运行原生 `gbrain bootstrap attach`。不要重做 Interview、Render 或 repo。
 
 ## 中国职业适配
 
-- 中文与中英混合检索：中文短名、英文别名、组织中英文名、正文短语与来源隔离。
-- 五级数据边界：公开、个人私密、经授权工作资料、组织受限、客户或机密。
-- Executive Schema：会议、决定、承诺、Brief 与信号。
-- 8 个工作入口：有来源检索、会前准备、项目 Brief、决策记录、承诺跟踪、关系上下文、每周判断进化、纠正回路。
-- 本地 PGLite、私有 Git workspace、校验和备份、隔离恢复与跨进程纠正读回。
+- **Executive Schema**：meeting、decision、commitment、brief、signal。
+- **8 个工作入口**：有来源检索、会前准备、项目 Brief、决策记录、承诺跟踪、关系上下文、每周判断进化、纠正回路。
+- **资料边界**：公开、个人私密、经授权工作资料、组织受限、客户或机密。
+- **可恢复性**：校验和备份、备份验证、隔离恢复、跨进程纠正读回。
+- **可升级性**：中国发行版差异留在 `distributions/mybrain-cn/`，GBrain Core 保持原生升级路径。
 
-## Agent 接入
+## 当前证据与未决问题
 
-| 宿主 | 部署 | 接线与验收 |
-|---|---|---|
-| Claude Code / Codex / opencode | Agent 自动驱动 GBrain 原生 Bootstrap | GBrain 原生 wire |
-| Hermes Agent | 条件式自动；工具 cwd 须指向产品 checkout | MyBrain Adapter；目标机运行 `hermes mcp test mybrain` |
-| WorkBuddy / CodeBuddy Code | Agent 自动驱动同一 Bootstrap | MyBrain Adapter；目标客户端必须回读 MCP |
-| DeepSeek Harness | 引导式；先显式处理 workspace sandbox | Cordis patch；developer preview，需目标机 live round-trip |
-| Feishu Aily | 手动 | 只生成无凭据登记包，不含远程部署、认证与租户配置 |
-| 豆包桌面版 / 豆包工作 | 不支持 | 尚无已验证官方 extension / MCP 接口 |
+工程门禁目前覆盖：
 
-不同宿主共享同一个 Brain 与同一份原生 Bootstrap 状态，不各自再做一次 Onboarding。
+- GBrain 原生 Bootstrap 为唯一身份与安装路径
+- MyBrain CN 激活、Schema 与原生 Skillpack
+- P0 9/9、native E2E 7/7、host adapters 5/5、GBrain verify 54/54
+- full-history clean clone、资料阻断、会前准备、纠正、备份与恢复
 
-## 开始使用
+这些绿灯只证明工程路径一致，不证明用户价值或商业成立。下一阶段只验证：
 
-最短入口：Clone 本仓库，用 Codex、Hermes 或 WorkBuddy / CodeBuddy Code 打开，然后说
-“部署 MyBrain”。Agent 会读取
-[`DEPLOY_FOR_AGENTS.md`](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)，在独立目录创建用户实例；
-不会把身份、资料或数据库写进产品源码。DeepSeek Harness 需先按该文档处理 sandbox 前置。
+1. 干净 MacBook + Codex 的真实首次部署；
+2. Day 1 真实会前准备或判断任务；
+3. 一次纠正在新会话改变答案；
+4. 备份与隔离恢复；
+5. Day 7 自愿重复使用；
+6. 同一 User Brain 在一个非 Codex 宿主完成目标客户端回路。
 
-1. 产品源码与用户实例分开：本仓库只提供程序和发行版资产。
-2. 用户实例走 GBrain 原生 Bootstrap，并生成自己拥有的私人 Git 仓库。
-3. 原生 Render 后激活 MyBrain CN；原生 verify 成功后才允许接入其他宿主。
-4. 已有用户实例换电脑时，Clone 用户自己的仓库并运行原生 `gbrain bootstrap attach`，不重做 Onboarding。
+## 文档地图
 
-详细说明：
-
-- [中国版说明](distributions/mybrain-cn/README.md)
-- [Agent 部署入口](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)
+- [MyBrain CN 发行版说明](distributions/mybrain-cn/README.md)
+- [Agent 部署合同](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)
 - [宿主支持矩阵](distributions/mybrain-cn/AGENT_HOSTS.md)
 - [Operator Runbook](distributions/mybrain-cn/OPERATOR_RUNBOOK.md)
-- [验收合同](distributions/mybrain-cn/MVP_ACCEPTANCE.md)
+- [发布与真人验收合同](distributions/mybrain-cn/MVP_ACCEPTANCE.md)
+- [机器可读宿主状态](distributions/mybrain-cn/host-support.json)
 
-## 项目边界
+## 治理与贡献
 
-- **GBrain Core**：数据库、检索、图谱、MCP、原生 Bootstrap 与通用协议。
-- **@MyBrain CN Distribution**：中国职业认知产品层，位于 `distributions/mybrain-cn/`。
-- **User Brain**：每位用户自己拥有的身份、关系、资料、记忆与判断记录，不进入公开发行仓库。
+默认分支是 `master`，用于贴近 GBrain 上游并减少同步摩擦。`master` 受保护：不允许直接写入、force push 或删除；改动必须经 PR、发布门禁与 owner 合并。外部贡献者可以 fork、提交分支并发起 PR，最终产品取舍由维护者 `@Madkyotiger` 决定。
 
 ## 上游与许可证
 
-@MyBrain 使用 [GBrain](https://github.com/garrytan/gbrain) 作为引擎基线，保留原项目的 MIT License、贡献历史与技术文档。@MyBrain 的产品问题请提交到本仓库 Issues。
-
-## 当前状态
-
-这是 **release candidate**。自动化证据覆盖原生 Bootstrap、发行版激活、Schema、Skillpack、MCP 协议、资料阻断、会前准备、纠正与恢复。真实 Executive 的 Day 1 / Day 7 使用，以及 Hermes、WorkBuddy、DeepSeek Harness 的目标机 live round-trip，仍需真人验收。
+MyBrain 使用 [GBrain](https://github.com/garrytan/gbrain) 作为引擎基线，保留原项目的 MIT License、贡献历史与技术文档。MyBrain 产品问题请提交到本仓库 Issues。
