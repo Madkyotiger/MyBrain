@@ -30,6 +30,32 @@ describe('README hero anchors (D9 regression guard)', () => {
   // First 50 lines is enough headroom for hero + first sub-section.
   const hero = readme.split('\n').slice(0, 50).join('\n');
 
+  if (readme.startsWith('# @MyBrain\n')) {
+    test('states the MyBrain product promise', () => {
+      expect(hero).toContain('面向中国资深管理者的私人专业 Brain');
+    });
+
+    test('keeps GBrain native Bootstrap as the only lifecycle', () => {
+      expect(hero).toContain('唯一安装与身份主链路是 GBrain 原生 Bootstrap');
+      expect(hero).toContain('preflight → engine → interview → render → skills → wire → repo → verify');
+    });
+
+    test('names the supported deployment surfaces without overstating them', () => {
+      expect(hero).toContain('Claude Code / Codex / opencode');
+      expect(hero).toContain('Hermes Agent');
+      expect(hero).toContain('WorkBuddy / CodeBuddy Code');
+      expect(hero).toContain('DeepSeek Harness');
+      expect(hero).toContain('豆包桌面版 / 豆包工作 | 不支持');
+    });
+
+    test('keeps one shared Brain and links the deployment contract', () => {
+      expect(hero).toContain('不同宿主共享同一个 Brain');
+      expect(hero).toContain('distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md');
+    });
+
+    return;
+  }
+
   test('mentions OpenClaw (the public agent platform credit)', () => {
     expect(hero).toContain('OpenClaw');
   });

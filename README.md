@@ -27,24 +27,23 @@
 
 ## Agent 接入
 
-| 宿主 | Bootstrap | 当前状态 |
+| 宿主 | 部署 | 接线与验收 |
 |---|---|---|
-| Claude Code | GBrain 原生自动 Bootstrap | 支持 |
-| Codex | GBrain 原生自动 Bootstrap | 支持 |
-| opencode | GBrain 原生自动 Bootstrap | 支持 |
-| Hermes Agent | 原生 Bootstrap 后接入 stdio MCP | Adapter 已验证，真人回路待验 |
-| WorkBuddy | 原生 Bootstrap 后接入 JSONC MCP | Adapter 已验证，客户端现场测试待验 |
-| DeepSeek Harness | 原生 Bootstrap 后接入 Cordis patch | Adapter 已验证，产品仍属 developer preview |
-| Feishu Aily | 远程 MCP 登记交接 | 只生成无凭据登记包，不含远程部署 |
-| 豆包桌面版 / 豆包工作 | 无已验证官方 extension / MCP 接口 | 暂不宣称支持 |
+| Claude Code / Codex / opencode | Agent 自动驱动 GBrain 原生 Bootstrap | GBrain 原生 wire |
+| Hermes Agent | 条件式自动；工具 cwd 须指向产品 checkout | MyBrain Adapter；目标机运行 `hermes mcp test mybrain` |
+| WorkBuddy / CodeBuddy Code | Agent 自动驱动同一 Bootstrap | MyBrain Adapter；目标客户端必须回读 MCP |
+| DeepSeek Harness | 引导式；先显式处理 workspace sandbox | Cordis patch；developer preview，需目标机 live round-trip |
+| Feishu Aily | 手动 | 只生成无凭据登记包，不含远程部署、认证与租户配置 |
+| 豆包桌面版 / 豆包工作 | 不支持 | 尚无已验证官方 extension / MCP 接口 |
 
 不同宿主共享同一个 Brain 与同一份原生 Bootstrap 状态，不各自再做一次 Onboarding。
 
 ## 开始使用
 
-最短入口：Clone 本仓库，用 Codex 打开，然后说“部署 MyBrain”。Codex 会读取
+最短入口：Clone 本仓库，用 Codex、Hermes 或 WorkBuddy / CodeBuddy Code 打开，然后说
+“部署 MyBrain”。Agent 会读取
 [`DEPLOY_FOR_AGENTS.md`](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)，在独立目录创建用户实例；
-不会把身份、资料或数据库写进产品源码。
+不会把身份、资料或数据库写进产品源码。DeepSeek Harness 需先按该文档处理 sandbox 前置。
 
 1. 产品源码与用户实例分开：本仓库只提供程序和发行版资产。
 2. 用户实例走 GBrain 原生 Bootstrap，并生成自己拥有的私人 Git 仓库。
@@ -54,7 +53,7 @@
 详细说明：
 
 - [中国版说明](distributions/mybrain-cn/README.md)
-- [Codex 部署入口](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)
+- [Agent 部署入口](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)
 - [宿主支持矩阵](distributions/mybrain-cn/AGENT_HOSTS.md)
 - [Operator Runbook](distributions/mybrain-cn/OPERATOR_RUNBOOK.md)
 - [验收合同](distributions/mybrain-cn/MVP_ACCEPTANCE.md)
@@ -71,4 +70,4 @@
 
 ## 当前状态
 
-这是 **release candidate**。自动化证据覆盖原生 Bootstrap、发行版激活、Schema、Skillpack、MCP 协议、资料阻断、会前准备、纠正与恢复。真实 Executive 的 Day 1 / Day 7 使用，以及非 Hermes 国内宿主的现场账号回路，仍需真人验收。
+这是 **release candidate**。自动化证据覆盖原生 Bootstrap、发行版激活、Schema、Skillpack、MCP 协议、资料阻断、会前准备、纠正与恢复。真实 Executive 的 Day 1 / Day 7 使用，以及 Hermes、WorkBuddy、DeepSeek Harness 的目标机 live round-trip，仍需真人验收。

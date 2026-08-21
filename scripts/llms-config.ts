@@ -7,9 +7,8 @@
  * Adding a doc? Add it here and run `bun run build:llms`. The drift-detection
  * test fails CI if you forget.
  *
- * Fork-friendliness: `rawBaseUrl` reads from `LLMS_REPO_BASE` so forks can
- * regenerate without manual URL rewrites:
- *   LLMS_REPO_BASE=https://raw.githubusercontent.com/fork-org/gbrain/main bun run build:llms
+ * Fork-friendliness: repository URLs read from environment variables so a
+ * downstream distribution can regenerate without manual URL rewrites.
  */
 
 export type DocEntry = {
@@ -26,13 +25,15 @@ export type DocSection = {
 };
 
 export const PROJECT = {
-  name: "GBrain",
+  name: "@MyBrain",
   summary:
-    "GBrain is a personal knowledge brain and GStack mod for agent platforms. Pluggable engines (PGLite default, Postgres+pgvector for scale), contract-first operations, 26 fat-markdown skills. Teaches agents brain ops, ingestion, enrichment, scheduling, identity, and access control.",
-  repoUrl: "https://github.com/garrytan/gbrain",
+    "@MyBrain is a China-focused professional cognition distribution built on the GBrain engine. It keeps GBrain native Bootstrap as the identity lifecycle and adds Chinese executive schemas, data boundaries, work skills, and multi-agent deployment guidance.",
+  repoUrl:
+    process.env.LLMS_REPO_URL ??
+    "https://github.com/Madkyotiger/MyBrain",
   rawBaseUrl:
     process.env.LLMS_REPO_BASE ??
-    "https://raw.githubusercontent.com/garrytan/gbrain/master",
+    "https://raw.githubusercontent.com/Madkyotiger/MyBrain/master",
 };
 
 export const SECTIONS: DocSection[] = [

@@ -10,8 +10,11 @@ which creates or attaches a separate user-owned workspace and then delegates the
 identity lifecycle to the native GBrain bootstrap.
 
 This is your install + operating protocol. Claude Code reads `./CLAUDE.md` automatically.
-Everyone else (Codex, Cursor, OpenClaw, Aider, Continue, or an LLM fetching via URL):
-start here.
+Everyone else — including Codex, Hermes Agent, WorkBuddy / CodeBuddy Code,
+DeepSeek Harness, Cursor, OpenClaw, Aider, Continue, or an LLM fetching via URL —
+starts here. For @MyBrain product deployment, the host-specific automation and
+manual fallback steps live in `distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md`; do
+not invent a separate onboarding flow.
 
 > **Becoming someone's persistent personal agent** (identity + memory + private repo)?
 > Follow [`BOOTSTRAP_FOR_AGENTS.md`](./BOOTSTRAP_FOR_AGENTS.md) — the `gbrain bootstrap`

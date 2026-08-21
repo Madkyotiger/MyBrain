@@ -13,14 +13,30 @@ function readJson(path: string): JsonObject {
 export function validateHosts() {
   const native = validateNativeBootstrap();
   const manifest = readJson(join(ROOT, 'manifest.json'));
-  const automatic = manifest.native_bootstrap?.automatic_hosts as string[];
-  const postBootstrap = manifest.native_bootstrap?.post_bootstrap_hosts as string[];
+  const agentDriven = manifest.native_bootstrap?.agent_driven_hosts as string[];
+  const conditionalAgentDriven = manifest.native_bootstrap?.conditional_agent_driven_hosts as string[];
+  const nativeWire = manifest.native_bootstrap?.native_wire_hosts as string[];
+  const adapterHosts = manifest.native_bootstrap?.adapter_hosts as string[];
+  const guidedHosts = manifest.native_bootstrap?.guided_hosts as string[];
+  const manualHosts = manifest.native_bootstrap?.manual_hosts as string[];
   const unsupported = manifest.native_bootstrap?.unsupported_hosts as string[];
-  if (JSON.stringify(automatic) !== JSON.stringify(['claude-code', 'codex', 'opencode'])) {
-    throw new Error('automatic native-bootstrap host list drifted');
+  if (JSON.stringify(agentDriven) !== JSON.stringify(['claude-code', 'codex', 'opencode', 'workbuddy'])) {
+    throw new Error('agent-driven bootstrap host list drifted');
   }
-  if (JSON.stringify(postBootstrap) !== JSON.stringify(['hermes', 'workbuddy', 'deepseek-harness', 'feishu-aily'])) {
-    throw new Error('post-bootstrap host list drifted');
+  if (JSON.stringify(conditionalAgentDriven) !== JSON.stringify(['hermes'])) {
+    throw new Error('conditional agent-driven bootstrap host list drifted');
+  }
+  if (JSON.stringify(nativeWire) !== JSON.stringify(['claude-code', 'codex', 'opencode'])) {
+    throw new Error('GBrain native wire host list drifted');
+  }
+  if (JSON.stringify(adapterHosts) !== JSON.stringify(['hermes', 'workbuddy', 'deepseek-harness'])) {
+    throw new Error('post-bootstrap adapter host list drifted');
+  }
+  if (JSON.stringify(guidedHosts) !== JSON.stringify(['deepseek-harness'])) {
+    throw new Error('guided host list drifted');
+  }
+  if (JSON.stringify(manualHosts) !== JSON.stringify(['feishu-aily'])) {
+    throw new Error('manual host list drifted');
   }
   if (!unsupported.includes('doubao-desktop')) throw new Error('Doubao Desktop must stay unsupported until an official interface is verified');
   if (manifest.release?.live_non_native_clients !== 'not-run') {
@@ -56,8 +72,12 @@ export function validateHosts() {
   return {
     status: 'pass',
     native_bootstrap_status: native.status,
-    automatic_hosts: automatic,
-    post_bootstrap_hosts: postBootstrap,
+    agent_driven_hosts: agentDriven,
+    conditional_agent_driven_hosts: conditionalAgentDriven,
+    native_wire_hosts: nativeWire,
+    adapter_hosts: adapterHosts,
+    guided_hosts: guidedHosts,
+    manual_hosts: manualHosts,
     unsupported_hosts: unsupported,
     live_non_native_clients: manifest.release.live_non_native_clients,
   };

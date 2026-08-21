@@ -20,33 +20,30 @@ mybrain-cn activate \
 
 激活只安装并启用 `mybrain-cn-executive` Schema Pack、用原生 Skillpack 接口安装 8 个 Skills，并写入 `state/mybrain-cn.json`。数据库初始化、身份、Git repo 与宿主 wiring 仍归原生 Bootstrap。
 
-## 自动 Bootstrap 与后接入宿主
+## Agent 部署与宿主接入
 
-可直接执行 GBrain 原生自动 Bootstrap：
-
-- Claude Code
-- Codex
-- opencode
-
-原生 Bootstrap 完成后再接入：
+完整部署入口是 [`DEPLOY_FOR_AGENTS.md`](./DEPLOY_FOR_AGENTS.md)。Codex 与 WorkBuddy / CodeBuddy Code 可以在交互会话中读取根 `AGENTS.md`，驱动同一条 GBrain 原生 Bootstrap。Hermes 需先确认活动 Profile 的工具 cwd 指向产品 checkout；固定 cwd 时按部署文档手动修正一次。差异只在原生 verify 后的宿主接线。
 
 ```bash
-# Hermes
+# Hermes：自动 Adapter + 必须的 live check
 mybrain-cn runtime hermes --config <abs> --workspace <abs> --state-root <abs>
+hermes mcp test mybrain
 
-# WorkBuddy
+# WorkBuddy / CodeBuddy Code：自动 Adapter + 目标客户端回读
 mybrain-cn runtime workbuddy --config <abs> --workspace <abs> --state-root <abs>
+codebuddy mcp get mybrain
 
-# DeepSeek Harness
+# DeepSeek Harness：先人工确认 workspace sandbox，再写 Cordis patch
 mybrain-cn runtime deepseek-harness \
   --patch <abs> --workspace <abs> --state-root <abs>
+dsh --profile web --dump-config
 
 # Feishu Aily：只生成远程 MCP 登记交接
 mybrain-cn runtime feishu-aily \
   --url https://brain.example.com/mcp --output <abs>
 ```
 
-豆包桌面版目前没有已验证的官方 extension / MCP 接口，发行版不宣称支持。Feishu Aily 的远程登记不能替代豆包桌面端接入。
+DeepSeek Harness 当前是引导式部署，不能静默放宽 sandbox。豆包桌面版目前没有已验证的官方 extension / MCP 接口，发行版不宣称支持。Feishu Aily 的远程登记不能替代豆包桌面端接入。机器可读状态见 `host-support.json`。
 
 ## 已落地能力
 

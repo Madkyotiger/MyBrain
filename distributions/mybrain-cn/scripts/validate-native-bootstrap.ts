@@ -30,8 +30,47 @@ export function validateNativeBootstrap() {
     throw new Error('root AGENTS.md must route product deployment away from the source checkout');
   }
   const deployRunbook = readFileSync(join(ROOT, 'DEPLOY_FOR_AGENTS.md'), 'utf8');
-  for (const marker of ['MyBrain 产品源码', 'MyBrain-Workspace', 'gbrain bootstrap status --json', 'gbrain bootstrap attach']) {
+  for (const marker of [
+    'MyBrain 产品源码',
+    'MyBrain-Workspace',
+    'gbrain bootstrap status --json',
+    'gbrain bootstrap attach',
+    'hermes mcp test mybrain',
+    'codebuddy mcp get mybrain',
+    'dsh --profile web --dump-config',
+    '豆包桌面版当前没有已验证',
+  ]) {
     if (!deployRunbook.includes(marker)) throw new Error(`deployment runbook marker missing: ${marker}`);
+  }
+
+  const hostMatrix = readFileSync(join(ROOT, 'AGENT_HOSTS.md'), 'utf8');
+  for (const marker of [
+    '驱动原生 Bootstrap',
+    '支持候选，目标机验收',
+    '引导部署',
+    '配置文件生成不能代替 live round-trip',
+  ]) {
+    if (!hostMatrix.includes(marker)) throw new Error(`host support marker missing: ${marker}`);
+  }
+
+  const hostSupport = JSON.parse(readFileSync(join(ROOT, 'host-support.json'), 'utf8')) as any;
+  if (hostSupport.schema_version !== 'mybrain-cn-host-support-v1' || hostSupport.bootstrap_owner !== 'gbrain-native') {
+    throw new Error('host support contract must keep GBrain native bootstrap as the owner');
+  }
+  const expectedDeployment: Record<string, string> = {
+    codex: 'automatic',
+    hermes: 'conditional-agent-driven',
+    workbuddy: 'automatic-agent-driven',
+    'deepseek-harness': 'guided',
+    'feishu-aily': 'manual',
+    'doubao-desktop': 'unsupported',
+  };
+  for (const [host, deployment] of Object.entries(expectedDeployment)) {
+    const entry = hostSupport.support?.[host];
+    if (entry?.deployment !== deployment) throw new Error(`host support contract mismatch: ${host}`);
+    if (deployment !== 'unsupported' && !entry?.target_live_check) {
+      throw new Error(`host support contract lacks target live check: ${host}`);
+    }
   }
 
   const activation = readFileSync(join(ROOT, 'src/activation.ts'), 'utf8');
