@@ -1,5 +1,5 @@
 {
-  "schema_version": "mybrain-cn-acceptance-v2",
+  "schema_version": "mybrain-cn-acceptance-v3",
   "p0": [
     { "id": "P0-01", "status": "pass", "evidence": "PRODUCT_CONTRACT.md" },
     { "id": "P0-02", "status": "pass", "evidence": "UPSTREAM_DELTA.md and git ancestry" },
@@ -21,6 +21,14 @@
     { "id": "P1-04", "status": "pass", "outcome": "restricted and client-secret classes are blocked before staging" },
     { "id": "P1-05", "status": "pass", "outcome": "correction persists across fresh process readback" },
     { "id": "P1-06", "status": "pass", "outcome": "checksum backup and isolated restore retain pages and corrections" }
+  ],
+  "p1_1_build": [
+    { "id": "P1.1-01", "status": "pass", "outcome": "three confirmed rounds and final full readback" },
+    { "id": "P1.1-02", "status": "pass", "outcome": "answers and plan precede a separate exact install confirmation" },
+    { "id": "P1.1-03", "status": "pass", "outcome": "non-interactive, missing, invalid, and unconfirmed input fail closed" },
+    { "id": "P1.1-04", "status": "pass", "outcome": "public Hermes profile is user-data-free and contains the existing eight skills" },
+    { "id": "P1.1-05", "status": "pass", "outcome": "current Hermes local-directory profile install semantics pass in isolation" },
+    { "id": "P1.1-06", "status": "pass", "outcome": "operator runbook and blank four-scenario human acceptance protocol exist" }
   ],
   "mvp": [
     { "id": "MVP-01", "status": "pass-synthetic", "outcome": "fresh-session memory round-trip" },

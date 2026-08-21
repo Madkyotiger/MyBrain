@@ -8,9 +8,12 @@
   "scripts": {
     "validate": "bun scripts/validate-p0.ts",
     "validate:p1": "bun scripts/validate-p1.ts",
+    "validate:p1.1": "bun scripts/validate-p1-1.ts",
     "test": "bun test tests",
     "test:p1": "bun test tests/p1-unit.test.ts && bun test tests/p1-e2e.serial.test.ts",
+    "test:p1.1": "bun test tests/p1-1-unit.test.ts tests/p1-1-profile.test.ts",
     "p0": "bun run validate && bun test tests/p0-contract.test.ts tests/chinese-retrieval-baseline.test.ts",
-    "p1": "bun run validate:p1 && bun run test:p1"
+    "p1": "bun run validate:p1 && bun run test:p1",
+    "p1.1": "bun run p0 && bun run p1 && bun run validate:p1.1 && bun run test:p1.1"
   }
 }

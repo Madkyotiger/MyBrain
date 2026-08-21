@@ -13,8 +13,9 @@ function readJson(rel: string): JsonObject {
 export function validateP1() {
   const p0 = validateP0();
   const manifest = readJson('manifest.json');
-  if (manifest.schema_version !== 'mybrain-cn-p1-v1' || manifest.status !== 'p1-candidate') {
-    throw new Error('P1 manifest must be mybrain-cn-p1-v1 / p1-candidate');
+  if (!['mybrain-cn-p1-v1', 'mybrain-cn-p1.1-v1'].includes(manifest.schema_version) ||
+      !['p1-candidate', 'p1.1-candidate'].includes(manifest.status)) {
+    throw new Error('P1 manifest must retain a P1/P1.1 candidate state');
   }
   if (manifest.p1?.default_runtime !== 'hermes' || manifest.p1?.mcp_surface !== 'verbs') {
     throw new Error('P1 must stay Hermes-first and expose the bounded verbs surface');
@@ -47,7 +48,7 @@ export function validateP1() {
   if (!support || support.status !== 'deferred') throw new Error('Support owner must remain an explicit P2 gate');
 
   const adapter = readFileSync(join(ROOT, 'src/hermes-adapter.ts'), 'utf8');
-  if (!adapter.includes("'--surface', 'verbs'") || !adapter.includes("'--source-guard'")) {
+  if (!adapter.includes("['run', gbrainCli, 'serve', '--surface', 'verbs', '--source-guard']")) {
     throw new Error('Hermes adapter must remain verbs-only and source-guarded');
   }
 

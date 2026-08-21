@@ -1,6 +1,6 @@
 {
-  "schema_version": "mybrain-cn-p1-v1",
-  "status": "p1-candidate",
+  "schema_version": "mybrain-cn-p1.1-v1",
+  "status": "p1.1-candidate",
   "generated_on": "2026-08-21",
   "upstream": {
     "repository": "https://github.com/garrytan/gbrain.git",
@@ -78,5 +78,34 @@
       "fresh-process-correction-readback",
       "checksum-backup-and-isolated-restore"
     ]
+  },
+  "p1_1": {
+    "scope": "interactive-onboarding-public-hermes-profile-operator-and-human-acceptance",
+    "required_files": [
+      "src/interactive-onboarding.ts",
+      "hermes-profile/distribution.yaml",
+      "hermes-profile/SOUL.md",
+      "hermes-profile/config.yaml",
+      "hermes-profile/mcp.json",
+      "OPERATOR_RUNBOOK.md",
+      "acceptance/HUMAN_ACCEPTANCE.md",
+      "acceptance/p1.1-evidence-template.json",
+      "scripts/validate-p1-1.ts",
+      "tests/p1-1-unit.test.ts",
+      "tests/p1-1-profile.test.ts",
+      "tests/helpers/bounded-conformance.ts"
+    ],
+    "automated_proofs": [
+      "three-round-confirmed-onboarding",
+      "final-readback-and-separate-install-confirmation",
+      "non-interactive-and-invalid-input-fail-closed",
+      "user-data-free-hermes-profile",
+      "current-local-directory-profile-install-semantics",
+      "exact-existing-eight-skills",
+      "manifest-and-mcp-config-validity",
+      "p0-and-p1-regression"
+    ],
+    "human_acceptance": "not-run",
+    "clean_machine_proof": "not-claimed"
   }
 }

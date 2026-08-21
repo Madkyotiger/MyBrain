@@ -6,8 +6,9 @@ import { intakeFile, type DataClass } from './intake.ts';
 import { configureHermesAdapter } from './hermes-adapter.ts';
 import { initializeMyBrain, loadAnswers, onboardingPlan } from './onboarding.ts';
 import { runGbrain } from './gbrain-runtime.ts';
+import { runTerminalOnboarding } from './interactive-onboarding.ts';
 
-const HELP = `MyBrain CN P1\n\nUsage:\n  mybrain-cn plan --answers <json> --workspace <abs> --state-root <abs>\n  mybrain-cn init --answers <json> --workspace <abs> --state-root <abs> --confirm-hash <sha256> --hermes-config <abs> [--force]\n  mybrain-cn runtime hermes --config <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> --source-id <id> [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs>\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nP1 defaults: local PGLite, Hermes MEMORY_VERBS surface, explicit-source intake, blocked restricted/client-secret data.\n`;
+const HELP = `@MyBrain P1.1\n\nUsage:\n  mybrain-cn onboard [--force]\n  mybrain-cn plan --answers <json> --workspace <abs> --state-root <abs>\n  mybrain-cn init --answers <json> --workspace <abs> --state-root <abs> --confirm-hash <sha256> --hermes-config <abs> [--force]\n  mybrain-cn runtime hermes --config <abs> --state-root <abs> [--source-id default] [--force]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> --source-id <id> [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs>\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nP1.1 defaults: explicit interactive confirmations, local PGLite, bounded MEMORY_VERBS, explicit-source intake, blocked restricted/client-secret data.\n`;
 
 function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -23,6 +24,10 @@ async function main(): Promise<void> {
   const gbrainCli = values.get('--gbrain-cli');
 
   switch (command) {
+    case 'onboard': {
+      output(await runTerminalOnboarding({ gbrainCli, force: booleans.has('--force') }));
+      return;
+    }
     case 'plan': {
       const answers = loadAnswers(requiredFlag(values, '--answers'));
       output(onboardingPlan(answers, requiredFlag(values, '--workspace'), requiredFlag(values, '--state-root')));

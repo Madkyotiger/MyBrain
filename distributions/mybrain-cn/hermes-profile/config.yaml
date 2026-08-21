@@ -1,0 +1,19 @@
+mcp_servers:
+  mybrain:
+    command: bun
+    args:
+      - run
+      - "${MYBRAIN_GBRAIN_CLI}"
+      - serve
+      - --surface
+      - verbs
+      - --source-guard
+    env:
+      GBRAIN_HOME: "${MYBRAIN_GBRAIN_HOME}"
+      GBRAIN_SOURCE: "${MYBRAIN_SOURCE_ID}"
+      GBRAIN_SWEEP: "0"
+    enabled: true
+    timeout: 120
+    connect_timeout: 60
+    resources: false
+    prompts: false

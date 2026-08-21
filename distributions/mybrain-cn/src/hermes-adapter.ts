@@ -43,7 +43,7 @@ export function configureHermesAdapter(options: HermesAdapterOptions): HermesAda
 
   const server = {
     command: 'bun',
-    args: [gbrainCli, 'serve', '--surface', 'verbs', '--source-guard'],
+    args: ['run', gbrainCli, 'serve', '--surface', 'verbs', '--source-guard'],
     env: {
       GBRAIN_HOME: stateRoot,
       GBRAIN_SOURCE: options.sourceId ?? 'default',

@@ -49,6 +49,7 @@ describe('P1 onboarding and Hermes adapter', () => {
     expect(parsed.mcp_servers.other.command).toBe('other');
     expect(parsed.mcp_servers.mybrain.command).toBe('bun');
     expect(parsed.mcp_servers.mybrain.args).toContain('verbs');
+    expect(parsed.mcp_servers.mybrain.args.slice(0, 2)).toEqual(['run', expect.any(String)]);
     expect(parsed.mcp_servers.mybrain.args).toContain('--source-guard');
     expect(parsed.mcp_servers.mybrain.resources).toBe(false);
     expect(receipt.backup_path).not.toBeNull();

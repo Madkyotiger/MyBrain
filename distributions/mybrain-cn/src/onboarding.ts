@@ -34,6 +34,15 @@ export interface OnboardingAnswers {
     blocked_data_classes: Array<'org_restricted' | 'client_or_secret'>;
     external_model_for_personal_private: boolean;
   };
+  setup?: {
+    initial_data_class: 'public' | 'personal_private';
+    initial_source_path?: string;
+    first_workflow: 'meeting-prep' | 'project-judgment' | 'weekly-judgment-evolution';
+    workspace: string;
+    state_root: string;
+    hermes_config?: string;
+    backup_output?: string;
+  };
 }
 
 export interface InitOptions {
@@ -56,6 +65,7 @@ export function validateAnswers(value: unknown): OnboardingAnswers {
     throw new Error('brain.name and at least one brain.primary_jobs entry are required.');
   }
   if (!['hermes', 'claude-code', 'codex'].includes(a.brain.default_runtime ?? '')) throw new Error('Unsupported default runtime.');
+  safeId(a.brain.source_id ?? 'default', 'brain.source_id');
   const allowed = new Set(a.boundaries?.allowed_data_classes ?? []);
   if (!allowed.has('personal_private')) throw new Error('P1 requires personal_private in allowed_data_classes.');
   const blocked = new Set(a.boundaries?.blocked_data_classes ?? []);
@@ -64,6 +74,22 @@ export function validateAnswers(value: unknown): OnboardingAnswers {
   }
   if (a.boundaries?.external_model_for_personal_private !== false) {
     throw new Error('P1 requires external_model_for_personal_private=false by default.');
+  }
+  if (a.setup) {
+    if (!['public', 'personal_private'].includes(a.setup.initial_data_class)) {
+      throw new Error('setup.initial_data_class must be public or personal_private.');
+    }
+    if (!['meeting-prep', 'project-judgment', 'weekly-judgment-evolution'].includes(a.setup.first_workflow)) {
+      throw new Error('Unsupported setup.first_workflow.');
+    }
+    requireAbsolute(a.setup.workspace, 'setup.workspace');
+    requireAbsolute(a.setup.state_root, 'setup.state_root');
+    if (a.setup.initial_source_path) requireAbsolute(a.setup.initial_source_path, 'setup.initial_source_path');
+    if (a.setup.backup_output) requireAbsolute(a.setup.backup_output, 'setup.backup_output');
+    if (a.brain.default_runtime === 'hermes') {
+      if (!a.setup.hermes_config) throw new Error('setup.hermes_config is required for the Hermes runtime.');
+      requireAbsolute(a.setup.hermes_config, 'setup.hermes_config');
+    }
   }
   return a as OnboardingAnswers;
 }

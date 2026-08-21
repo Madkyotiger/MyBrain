@@ -4,11 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
 import { createBackup, restoreBackup, verifyBackup } from '../src/backup.ts';
-import { readJson } from '../src/common.ts';
+import { readJson, REPO_ROOT } from '../src/common.ts';
 import { callVerb, runGbrain } from '../src/gbrain-runtime.ts';
 import { buildMeetingPrep, recordCorrection } from '../src/hero-loops.ts';
 import { intakeFile } from '../src/intake.ts';
 import { initializeMyBrain, loadAnswers, onboardingHash } from '../src/onboarding.ts';
+import { runBoundedStdioConformance } from './helpers/bounded-conformance.ts';
 
 const root = mkdtempSync(join(tmpdir(), 'mybrain-p1-e2e-'));
 const workspace = join(root, 'workspace');
@@ -35,6 +36,7 @@ describe('P1 fresh install, first loop, correction, and recovery', () => {
     expect(existsSync(join(workspace, 'skills', 'meeting-prep', 'SKILL.md'))).toBe(true);
     const parsed = yaml.load(readFileSync(hermesConfig, 'utf8')) as any;
     expect(parsed.mcp_servers.mybrain.args).toEqual([
+      'run',
       gbrainCli,
       'serve',
       '--surface',
@@ -46,16 +48,17 @@ describe('P1 fresh install, first loop, correction, and recovery', () => {
   }, 180_000);
 
   test('actual stdio MCP endpoint conforms to the seven-verb contract', () => {
-    const target = `bun ${gbrainCli} serve --surface verbs --source-guard`;
-    const result = runGbrain(['protocol', 'conformance', '--target', target, '--json'], {
-      stateRoot,
-      gbrainCli,
-      env: { GBRAIN_SOURCE: 'default', GBRAIN_SWEEP: '0' },
+    return runBoundedStdioConformance({
+      command: 'bun',
+      args: ['run', 'src/cli.ts', 'serve', '--surface', 'verbs'],
+      cwd: REPO_ROOT,
+      env: { ...process.env, GBRAIN_HOME: stateRoot, GBRAIN_SOURCE: 'default', GBRAIN_SWEEP: '0' },
+    }).then(({ report, advertised }) => {
+      expect(advertised).toEqual(['context_pack', 'delta', 'entity', 'forget', 'recall', 'remember', 'synthesize']);
+      expect(report.ok).toBe(true);
+      expect(report.failed).toBe(0);
+      expect(report.passed).toBeGreaterThan(0);
     });
-    const report = JSON.parse(result.stdout) as { ok?: boolean; passed?: number; failed?: number };
-    expect(report.ok).toBe(true);
-    expect(report.failed ?? 0).toBe(0);
-    expect(report.passed ?? 0).toBeGreaterThan(0);
   }, 180_000);
 
   test('explicit personal intake syncs and powers the first meeting-prep loop', () => {

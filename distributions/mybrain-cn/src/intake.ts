@@ -60,7 +60,7 @@ export function intakeFile(options: IntakeOptions) {
   if (size > MAX_BYTES) throw new Error(`Input exceeds ${MAX_BYTES} byte P1 limit: ${size}`);
 
   if (options.dataClass === 'org_restricted' || options.dataClass === 'client_or_secret') {
-    throw new Error(`Data class ${options.dataClass} is blocked by MyBrain CN P1 policy.`);
+    throw new Error(`Data class ${options.dataClass} is blocked by @MyBrain P1 policy.`);
   }
   const workspaceConfig = readJson<{ source_id: string; allowed_data_classes: string[] }>(join(workspace, 'mybrain.json'));
   if (!workspaceConfig.allowed_data_classes.includes(options.dataClass)) {

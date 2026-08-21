@@ -1,4 +1,4 @@
-# P0 / P1 验收
+# P0 / P1 / P1.1 验收
 
 ## P0：方向与边界
 
@@ -23,6 +23,19 @@
 | P1-06 | 恢复不是“有备份文件就算了” | PASS | checksum verify → isolated restore → 页面与 correction 回读 |
 
 P1 的 Accountable Owner 已在私有项目控制面明确；MK 是 Builder / Operator。产品发起人不成为默认 helpdesk。非创始人 support owner 要在 P2 多用户 pilot 前落实。
+
+## P1.1：可交互交付候选
+
+| ID | 必须为真 | 状态 | 自动化证据 |
+|---|---|---|---|
+| P1.1-01 | 三轮问题各自回读确认，最终完整回读再确认 | PASS | injectable interaction tests |
+| P1.1-02 | answers/plan/hash 先生成，独立 `INSTALL` 后才初始化 | PASS | exact-token gate tests |
+| P1.1-03 | 非交互、必答缺失、非法选择、未确认全部 fail closed | PASS | unit + spawned CLI tests |
+| P1.1-04 | Hermes nested package 无用户数据、无凭据、无机器路径并含现有 8 Skills | PASS | P1.1 validator |
+| P1.1-05 | 当前 Hermes 接受 `profile install <local-dir> --name <name> -y` | PASS | isolated local install test |
+| P1.1-06 | 操作与真人验收协议可执行且不虚报 | PASS | runbook + four-scenario blank evidence template |
+
+真人 Day 1 / Day 7、非 Builder 独立恢复和 clean-machine 安装仍未证明。`acceptance/p1.1-evidence-template.json` 的四项状态均为 `not-run`，不能用合成自动化结果替代。
 
 ## 还没有被证明的事
 
