@@ -42,15 +42,19 @@
 
 ## 开始使用
 
-1. 阅读 [@MyBrain CN Bootstrap for Agents](distributions/mybrain-cn/BOOTSTRAP_FOR_AGENTS.md)。
-2. 让 Claude Code、Codex 或 opencode 按仓库根目录的原生 `BOOTSTRAP_FOR_AGENTS.md` 执行。
-3. 原生 Render 后运行 `mybrain-cn activate`。
-4. 完成原生 `gbrain bootstrap verify` 与 `mybrain-cn verify`。
-5. 如使用 Hermes、WorkBuddy 或 DeepSeek Harness，再执行对应的宿主接入命令。
+最短入口：Clone 本仓库，用 Codex 打开，然后说“部署 MyBrain”。Codex 会读取
+[`DEPLOY_FOR_AGENTS.md`](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)，在独立目录创建用户实例；
+不会把身份、资料或数据库写进产品源码。
+
+1. 产品源码与用户实例分开：本仓库只提供程序和发行版资产。
+2. 用户实例走 GBrain 原生 Bootstrap，并生成自己拥有的私人 Git 仓库。
+3. 原生 Render 后激活 MyBrain CN；原生 verify 成功后才允许接入其他宿主。
+4. 已有用户实例换电脑时，Clone 用户自己的仓库并运行原生 `gbrain bootstrap attach`，不重做 Onboarding。
 
 详细说明：
 
 - [中国版说明](distributions/mybrain-cn/README.md)
+- [Codex 部署入口](distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md)
 - [宿主支持矩阵](distributions/mybrain-cn/AGENT_HOSTS.md)
 - [Operator Runbook](distributions/mybrain-cn/OPERATOR_RUNBOOK.md)
 - [验收合同](distributions/mybrain-cn/MVP_ACCEPTANCE.md)

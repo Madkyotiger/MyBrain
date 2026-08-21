@@ -13,6 +13,7 @@ import { status as interviewStatus, readBackHash } from '../../../src/core/boots
 import { readManifest } from '../../../src/core/bootstrap/format.ts';
 import { DISTRIBUTION_DIR, GBRAIN_CLI, readJson, requireAbsolute, writeJson } from './common.ts';
 import { runGbrain } from './gbrain-runtime.ts';
+import { requireNativeBootstrapVerified } from './native-workspace.ts';
 
 export const MYBRAIN_SCHEMA_PACK = 'mybrain-cn-executive';
 export const MYBRAIN_SKILLS = [
@@ -175,6 +176,7 @@ export function verifyMyBrain(options: Omit<ActivationOptions, 'force'>) {
   if (receipt.workspace !== workspace || receipt.state_root !== stateRoot) {
     throw new Error('Activation receipt belongs to different workspace/state paths.');
   }
+  const nativeVerification = requireNativeBootstrapVerified(workspace, stateRoot);
   const installedDigest = directoryDigest(join(stateRoot, '.gbrain', 'schema-packs', MYBRAIN_SCHEMA_PACK));
   const distributionDigest = directoryDigest(join(DISTRIBUTION_DIR, 'schema-packs', MYBRAIN_SCHEMA_PACK));
   if (installedDigest !== distributionDigest || receipt.schema_digest !== distributionDigest) {
@@ -194,7 +196,12 @@ export function verifyMyBrain(options: Omit<ActivationOptions, 'force'>) {
   return {
     schema_version: 'mybrain-cn-verification-v1',
     ok: true,
-    native_bootstrap: { confirmed: true, confirmation_hash: native.confirmationHash, agent_name: native.agentName },
+    native_bootstrap: {
+      confirmed: true,
+      confirmation_hash: native.confirmationHash,
+      agent_name: native.agentName,
+      verified_at: nativeVerification.verifiedAt,
+    },
     schema_pack: MYBRAIN_SCHEMA_PACK,
     skills,
     receipt: receiptPath,

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, resolve } from 'node:path';
 import { applyEdits, modify, parse as parseJsonc, type ParseError } from 'jsonc-parser';
 import { GBRAIN_CLI, requireAbsolute } from './common.ts';
-import { resolveNativeSourceId } from './native-workspace.ts';
+import { requireNativeBootstrapVerified } from './native-workspace.ts';
 
 export interface WorkBuddyAdapterOptions {
   configPath: string;
@@ -26,7 +26,7 @@ export interface WorkBuddyAdapterReceipt {
 export function configureWorkBuddyAdapter(options: WorkBuddyAdapterOptions): WorkBuddyAdapterReceipt {
   const configPath = requireAbsolute(options.configPath, 'WorkBuddy MCP config path');
   const stateRoot = requireAbsolute(options.stateRoot, 'GBrain state root');
-  const { sourceId } = resolveNativeSourceId(options.workspace, options.sourceId);
+  const { sourceId } = requireNativeBootstrapVerified(options.workspace, stateRoot, options.sourceId);
   const gbrainCli = requireAbsolute(options.gbrainCli ?? GBRAIN_CLI, 'GBrain CLI path');
   const original = existsSync(configPath) ? readFileSync(configPath, 'utf8') : '';
   const base = original.trim() ? original : '{}\n';

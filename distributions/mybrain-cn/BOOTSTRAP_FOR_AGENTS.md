@@ -65,7 +65,7 @@ gbrain bootstrap interview --init
 **第 2 轮：工作语境与关系**
 
 - `PRINCIPAL_CONTEXT`：你做什么、正在建设什么、在意什么、通常怎么工作？
-- `PRINCIPAL_TIMEZONE`：你的时区是什么？可跳过。
+- `PRINCIPAL_TIMEZONE`：你的 IANA 时区是什么，例如 `Asia/Shanghai`？必须询问并记录；只有用户明确确认时才使用 `Asia/Shanghai`，不得静默采用上游默认值。
 - `SOUL_RELATIONSHIP`：它相对你是什么角色？可跳过。
 - `SOUL_MODE_DEFAULT`：模糊请求时，默认先行动还是先问？可跳过。
 
@@ -148,7 +148,7 @@ mybrain-cn activate \
 
 ### 7. 回到原生链路
 
-继续运行根目录原生 Bootstrap 要求的 wire、repo、verify 阶段。宿主属于 Hermes、WorkBuddy 或 DeepSeek Harness 时，先完成可执行的原生基础安装，再使用对应的 `mybrain-cn runtime ...` 命令接入；不要创建新的 Onboarding 状态。
+继续运行根目录原生 Bootstrap 要求的 wire、repo、verify 阶段。Claude Code、Codex 与 opencode 使用原生 wire。Hermes、WorkBuddy 或 DeepSeek Harness 不伪装成原生 harness；等 `gbrain bootstrap verify` 与 `mybrain-cn verify` 都成功后，才使用对应的 `mybrain-cn runtime ...` 接入。
 
 ### 8. 上线验收
 
@@ -163,4 +163,4 @@ mybrain-cn verify \
 
 ## 机器二
 
-已有初始化完成的私有 Agent 仓库，按原生 `gbrain bootstrap attach` 接入新机器；随后运行 `mybrain-cn verify`。只有 Schema 或 Skills 缺失、版本变化时才重新执行 `mybrain-cn activate`。不要重跑 Interview，也不要创建第二份身份。
+已有初始化完成的用户实例仓库，按原生 `gbrain bootstrap attach` 接入新机器；随后运行 `mybrain-cn verify`。只有 Schema 或 Skills 缺失、版本变化时才重新执行 `mybrain-cn activate`，再重跑原生 verify。不要重跑 Interview，也不要创建第二份身份。

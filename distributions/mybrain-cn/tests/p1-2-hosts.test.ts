@@ -7,6 +7,7 @@ import { parse as parseJsonc } from 'jsonc-parser';
 import { configureWorkBuddyAdapter } from '../src/workbuddy-adapter.ts';
 import { configureDeepSeekHarnessAdapter } from '../src/deepseek-harness-adapter.ts';
 import { createFeishuAilyHandoff } from '../src/feishu-aily-handoff.ts';
+import { writeSuccessfulNativeVerifyFixture } from './helpers/native-bootstrap-fixture.ts';
 
 const roots: string[] = [];
 afterEach(() => {
@@ -19,28 +20,21 @@ function root(name: string): string {
   return value;
 }
 
-function nativeWorkspace(base: string): string {
+function nativeWorkspace(base: string): { workspace: string; stateRoot: string } {
   const workspace = join(base, 'workspace');
-  mkdirSync(workspace, { recursive: true });
-  writeFileSync(join(workspace, 'agent.json'), JSON.stringify({
-    format_version: 1,
-    initialized: true,
-    agent_name: 'test',
-    created_by: 'test',
-    created_at: '2026-08-21T00:00:00.000Z',
-    source_id: 'workspace',
-  }));
-  return workspace;
+  const stateRoot = join(base, 'state');
+  writeSuccessfulNativeVerifyFixture({ workspace, stateRoot });
+  return { workspace, stateRoot };
 }
 
 describe('release-candidate post-bootstrap China agent host adapters', () => {
   test('WorkBuddy preserves JSONC comments and unrelated servers, backs up, and refuses silent replacement', () => {
     const base = root('mybrain-workbuddy-');
-    const workspace = nativeWorkspace(base);
+    const { workspace, stateRoot } = nativeWorkspace(base);
     const config = join(base, '.mcp.json');
     const original = '{\n  // keep this comment\n  "mcpServers": { "existing": { "type": "stdio", "command": "keep" } }\n}\n';
     writeFileSync(config, original);
-    const receipt = configureWorkBuddyAdapter({ configPath: config, stateRoot: join(base, 'state'), workspace });
+    const receipt = configureWorkBuddyAdapter({ configPath: config, stateRoot, workspace });
     const rendered = readFileSync(config, 'utf8');
     const parsed = parseJsonc(rendered) as any;
     expect(rendered).toContain('// keep this comment');
@@ -49,18 +43,16 @@ describe('release-candidate post-bootstrap China agent host adapters', () => {
     expect(parsed.mcpServers.mybrain.args).toEqual(expect.arrayContaining(['verbs', '--source-guard']));
     expect(parsed.mcpServers.mybrain.env.GBRAIN_SOURCE).toBe('workspace');
     expect(readFileSync(receipt.backup_path!, 'utf8')).toBe(original);
-    expect(() => configureWorkBuddyAdapter({ configPath: config, stateRoot: join(base, 'state'), workspace })).toThrow('already exists');
+    expect(() => configureWorkBuddyAdapter({ configPath: config, stateRoot, workspace })).toThrow('already exists');
   });
 
   test('DeepSeek Harness preserves unrelated patch operations and follows the native workspace source', () => {
     const base = root('mybrain-dsh-');
-    const workspace = nativeWorkspace(base);
+    const { workspace, stateRoot } = nativeWorkspace(base);
     const patch = join(base, 'cordis.patch.yml');
     const original = '- insert:\n    - id: existing-plugin\n      name: example-plugin\n      config:\n        keep: true\n';
     writeFileSync(patch, original);
-    const receipt = configureDeepSeekHarnessAdapter({
-      patchPath: patch, stateRoot: join(base, 'state'), workspace,
-    });
+    const receipt = configureDeepSeekHarnessAdapter({ patchPath: patch, stateRoot, workspace });
     const parsed = yaml.load(readFileSync(patch, 'utf8')) as any[];
     const entries = parsed.flatMap((operation) => operation.insert ?? []);
     expect(entries.find((entry) => entry.id === 'existing-plugin').config.keep).toBe(true);
@@ -70,9 +62,28 @@ describe('release-candidate post-bootstrap China agent host adapters', () => {
     expect(mybrain.config.args).toEqual(expect.arrayContaining(['verbs', '--source-guard']));
     expect(mybrain.config.env.GBRAIN_SOURCE).toBe('workspace');
     expect(readFileSync(receipt.backup_path!, 'utf8')).toBe(original);
-    expect(() => configureDeepSeekHarnessAdapter({
-      patchPath: patch, stateRoot: join(base, 'state'), workspace,
-    })).toThrow('already exists');
+    expect(() => configureDeepSeekHarnessAdapter({ patchPath: patch, stateRoot, workspace })).toThrow('already exists');
+  });
+
+  test('host adapters refuse attachment before native verify succeeds after activation', () => {
+    const base = root('mybrain-preverify-');
+    const workspace = join(base, 'workspace');
+    const stateRoot = join(base, 'state');
+    mkdirSync(join(workspace, 'state'), { recursive: true });
+    writeFileSync(join(workspace, 'agent.json'), JSON.stringify({
+      format_version: 1,
+      initialized: true,
+      agent_name: 'test',
+      created_by: 'test',
+      created_at: '2026-08-21T00:00:00.000Z',
+      source_id: 'workspace',
+    }));
+    writeFileSync(join(workspace, 'state', 'mybrain-cn.json'), JSON.stringify({
+      activated_at: '2026-08-21T00:00:00.000Z',
+    }));
+    expect(() => configureWorkBuddyAdapter({
+      configPath: join(base, '.mcp.json'), stateRoot, workspace,
+    })).toThrow('receipt is missing');
   });
 
   test('Feishu Aily produces a credential-free remote registration handoff and rejects unsafe endpoints', () => {

@@ -10,6 +10,7 @@
     "strategy": "upstream-first-overlay",
     "allowed_delta_prefixes": [
       "README.md",
+      "AGENTS.md",
       "package.json",
       "distributions/mybrain-cn/"
     ]
@@ -85,6 +86,8 @@
       "src/workbuddy-adapter.ts",
       "src/deepseek-harness-adapter.ts",
       "src/feishu-aily-handoff.ts",
+      "DEPLOY_FOR_AGENTS.md",
+      "tests/helpers/native-bootstrap-fixture.ts",
       "tests/p1-unit.test.ts",
       "tests/p1-e2e.serial.test.ts",
       "tests/p1-2-hosts.test.ts",

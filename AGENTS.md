@@ -1,5 +1,14 @@
 # Agents working on GBrain
 
+## @MyBrain product deployment
+
+This checkout is the MyBrain product source, not a user's personal workspace. If
+the human asks to deploy, install, or test MyBrain for themselves, do **not** run
+the identity bootstrap in this repository. Read and follow
+[`distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md`](./distributions/mybrain-cn/DEPLOY_FOR_AGENTS.md),
+which creates or attaches a separate user-owned workspace and then delegates the
+identity lifecycle to the native GBrain bootstrap.
+
 This is your install + operating protocol. Claude Code reads `./CLAUDE.md` automatically.
 Everyone else (Codex, Cursor, OpenClaw, Aider, Continue, or an LLM fetching via URL):
 start here.

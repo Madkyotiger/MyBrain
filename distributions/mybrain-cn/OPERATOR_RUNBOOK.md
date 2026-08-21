@@ -4,6 +4,8 @@
 
 把一台新机器带到可验证的 @MyBrain CN 单用户状态。此手册服从 GBrain 原生 Bootstrap，不另开实验入口。
 
+MyBrain checkout 是产品源码，用户 workspace 必须使用另一条绝对路径。Codex 直接部署的入口见 `DEPLOY_FOR_AGENTS.md`；不得在产品源码仓库生成身份、数据库或用户资料。
+
 ## 1. Preflight
 
 - 使用 full-history clone；浅克隆不能证明上游基线关系。
@@ -65,7 +67,7 @@ mybrain-cn verify \
 - Feishu Aily：只生成远程登记交接。
 - 豆包桌面版：当前不接入。
 
-Adapter 只在 Bootstrap 后执行。它不能创建用户身份，也不能触发另一套 Onboarding。
+Adapter 只在原生 verify 与 MyBrain verify 都成功后执行；CLI 会拒绝较早接入。它不能创建用户身份，也不能触发另一套 Onboarding。
 
 ## 6. 资料与第一条回路
 

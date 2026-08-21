@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, resolve } from 'node:path';
 import yaml from 'js-yaml';
 import { GBRAIN_CLI, requireAbsolute } from './common.ts';
-import { resolveNativeSourceId } from './native-workspace.ts';
+import { requireNativeBootstrapVerified } from './native-workspace.ts';
 
 export interface HermesAdapterOptions {
   configPath: string;
@@ -34,7 +34,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 export function configureHermesAdapter(options: HermesAdapterOptions): HermesAdapterReceipt {
   const configPath = requireAbsolute(options.configPath, 'Hermes config path');
   const stateRoot = requireAbsolute(options.stateRoot, 'GBrain state root');
-  const { sourceId } = resolveNativeSourceId(options.workspace, options.sourceId);
+  const { sourceId } = requireNativeBootstrapVerified(options.workspace, stateRoot, options.sourceId);
   const gbrainCli = requireAbsolute(options.gbrainCli ?? GBRAIN_CLI, 'GBrain CLI path');
   const original = existsSync(configPath) ? readFileSync(configPath, 'utf8') : '';
   const parsed = original.trim() ? asRecord(yaml.load(original)) : {};

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, resolve } from 'node:path';
 import yaml from 'js-yaml';
 import { GBRAIN_CLI, requireAbsolute } from './common.ts';
-import { resolveNativeSourceId } from './native-workspace.ts';
+import { requireNativeBootstrapVerified } from './native-workspace.ts';
 
 export interface DeepSeekHarnessAdapterOptions {
   patchPath: string;
@@ -37,7 +37,7 @@ function parseOperations(text: string, path: string): PatchOperation[] {
 export function configureDeepSeekHarnessAdapter(options: DeepSeekHarnessAdapterOptions): DeepSeekHarnessAdapterReceipt {
   const patchPath = requireAbsolute(options.patchPath, 'DeepSeek Harness patch path');
   const stateRoot = requireAbsolute(options.stateRoot, 'GBrain state root');
-  const { workspace, sourceId } = resolveNativeSourceId(options.workspace, options.sourceId);
+  const { workspace, sourceId } = requireNativeBootstrapVerified(options.workspace, stateRoot, options.sourceId);
   const gbrainCli = requireAbsolute(options.gbrainCli ?? GBRAIN_CLI, 'GBrain CLI path');
   const original = existsSync(patchPath) ? readFileSync(patchPath, 'utf8') : '';
   const operations = parseOperations(original, patchPath);

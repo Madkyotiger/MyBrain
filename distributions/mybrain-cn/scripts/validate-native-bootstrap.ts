@@ -25,6 +25,15 @@ export function validateNativeBootstrap() {
     if (!cli.includes(marker)) throw new Error(`production CLI marker missing: ${marker}`);
   }
 
+  const rootAgents = readFileSync(join(REPO_ROOT, 'AGENTS.md'), 'utf8');
+  if (!rootAgents.includes('DEPLOY_FOR_AGENTS.md') || !rootAgents.includes("not a user's personal workspace")) {
+    throw new Error('root AGENTS.md must route product deployment away from the source checkout');
+  }
+  const deployRunbook = readFileSync(join(ROOT, 'DEPLOY_FOR_AGENTS.md'), 'utf8');
+  for (const marker of ['MyBrain 产品源码', 'MyBrain-Workspace', 'gbrain bootstrap status --json', 'gbrain bootstrap attach']) {
+    if (!deployRunbook.includes(marker)) throw new Error(`deployment runbook marker missing: ${marker}`);
+  }
+
   const activation = readFileSync(join(ROOT, 'src/activation.ts'), 'utf8');
   for (const marker of [
     "from '../../../src/core/bootstrap/interview.ts'",
@@ -42,6 +51,15 @@ export function validateNativeBootstrap() {
   }
   if (intake.includes("join(workspace, 'mybrain.json')")) throw new Error('legacy workspace config is still active');
 
+  const nativeWorkspace = readFileSync(join(ROOT, 'src/native-workspace.ts'), 'utf8');
+  if (!nativeWorkspace.includes('requireNativeBootstrapVerified') || !nativeWorkspace.includes('listVerifyRuns')) {
+    throw new Error('post-bootstrap host adapters must be guarded by native verify evidence');
+  }
+  for (const rel of ['src/hermes-adapter.ts', 'src/workbuddy-adapter.ts', 'src/deepseek-harness-adapter.ts']) {
+    const adapter = readFileSync(join(ROOT, rel), 'utf8');
+    if (!adapter.includes('requireNativeBootstrapVerified')) throw new Error(`${rel} bypasses native verify gate`);
+  }
+
   const runbook = readFileSync(join(ROOT, 'BOOTSTRAP_FOR_AGENTS.md'), 'utf8');
   for (const marker of [
     '唯一主链路',
@@ -51,6 +69,7 @@ export function validateNativeBootstrap() {
     'mybrain-cn activate',
     'gbrain bootstrap verify',
     'mybrain-cn verify',
+    'Asia/Shanghai',
   ]) {
     if (!runbook.includes(marker)) throw new Error(`native bootstrap runbook marker missing: ${marker}`);
   }

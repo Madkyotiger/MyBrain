@@ -6,6 +6,7 @@ import yaml from 'js-yaml';
 import { configureHermesAdapter } from '../src/hermes-adapter.ts';
 import { MYBRAIN_SCHEMA_PACK, MYBRAIN_SKILLS, verifyMyBrain } from '../src/activation.ts';
 import { readJson } from '../src/common.ts';
+import { writeSuccessfulNativeVerifyFixture } from './helpers/native-bootstrap-fixture.ts';
 
 const roots: string[] = [];
 afterEach(() => {
@@ -36,19 +37,12 @@ describe('P1 native-bootstrap overlay and Hermes attachment', () => {
     roots.push(root);
     const config = join(root, 'config.yaml');
     const workspace = join(root, 'workspace');
-    mkdirSync(workspace);
-    writeFileSync(join(workspace, 'agent.json'), JSON.stringify({
-      format_version: 1,
-      initialized: true,
-      agent_name: 'test',
-      created_by: 'test',
-      created_at: '2026-08-21T00:00:00.000Z',
-      source_id: 'workspace',
-    }));
+    const stateRoot = join(root, 'state');
+    writeSuccessfulNativeVerifyFixture({ workspace, stateRoot });
     writeFileSync(config, 'model: existing\nmcp_servers:\n  other:\n    command: other\n');
     const receipt = configureHermesAdapter({
       configPath: config,
-      stateRoot: join(root, 'state'),
+      stateRoot,
       workspace,
     });
     const parsed = yaml.load(readFileSync(config, 'utf8')) as any;
