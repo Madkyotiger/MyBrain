@@ -13,6 +13,12 @@
       "AGENTS.md",
       ".github/CODEOWNERS",
       "package.json",
+      "scripts/llms-config.ts",
+      "scripts/structural-suites.tsv",
+      "test/readme-hero-anchors.test.ts",
+      "test/build-llms.test.ts",
+      "llms.txt",
+      "llms-full.txt",
       "distributions/mybrain-cn/"
     ]
   },

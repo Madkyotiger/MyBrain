@@ -38,7 +38,7 @@ describe("build-llms generator", () => {
     const { llmsTxt } = buildLlmsFiles();
     const lines = llmsTxt.split("\n");
 
-    expect(lines[0], "first line must be H1").toBe("# GBrain");
+    expect(lines[0], "first line must be H1").toBe("# @MyBrain");
 
     // Blockquote summary on line 2 or 3 (spec allows blank line after H1).
     const hasEarlyBlockquote =
