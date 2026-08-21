@@ -1,10 +1,16 @@
 {
-  "name": "@mybrain/cn-p0",
+  "name": "@mybrain/cn",
   "private": true,
   "type": "module",
+  "bin": {
+    "mybrain-cn": "src/cli.ts"
+  },
   "scripts": {
     "validate": "bun scripts/validate-p0.ts",
+    "validate:p1": "bun scripts/validate-p1.ts",
     "test": "bun test tests",
-    "p0": "bun run validate && bun run test"
+    "test:p1": "bun test tests/p1-unit.test.ts && bun test tests/p1-e2e.serial.test.ts",
+    "p0": "bun run validate && bun test tests/p0-contract.test.ts tests/chinese-retrieval-baseline.test.ts",
+    "p1": "bun run validate:p1 && bun run test:p1"
   }
 }

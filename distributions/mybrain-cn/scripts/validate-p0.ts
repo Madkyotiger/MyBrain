@@ -31,7 +31,7 @@ function git(args: string[], allowFailure = false): { code: number; stdout: stri
   });
   const result = {
     code: p.exitCode,
-    stdout: decoder.decode(p.stdout).trim(),
+    stdout: decoder.decode(p.stdout).trimEnd(),
     stderr: decoder.decode(p.stderr).trim(),
   };
   if (!allowFailure && result.code !== 0) {
@@ -66,8 +66,12 @@ function changedPaths(): string[] {
 
 export function validateP0(): P0Receipt {
   const manifest = readJson('manifest.json');
-  if (manifest.schema_version !== 'mybrain-cn-p0-v1') throw new Error('unexpected manifest schema_version');
-  if (manifest.status !== 'p0-candidate') throw new Error('P0 status must be p0-candidate');
+  if (!['mybrain-cn-p0-v1', 'mybrain-cn-p1-v1'].includes(manifest.schema_version)) {
+    throw new Error('unexpected manifest schema_version');
+  }
+  if (!['p0-candidate', 'p1-candidate'].includes(manifest.status)) {
+    throw new Error('distribution status must retain a validated P0/P1 candidate state');
+  }
   if (manifest.architecture?.core_policy !== 'overlay-first') throw new Error('core policy must stay overlay-first');
 
   const required = manifest.required_files as string[];
@@ -114,7 +118,9 @@ export function validateP0(): P0Receipt {
   }
   const phase1 = acceptance.phase1_entry as JsonObject[];
   const owner = phase1.find((item) => item.id === 'P1-OWNER');
-  if (!owner || owner.status !== 'blocked') throw new Error('Phase 1 must remain blocked until a technical owner is named');
+  if (!owner || !['blocked', 'pass'].includes(owner.status)) {
+    throw new Error('Phase 1 owner gate must be explicitly blocked or passed');
+  }
 
   const packPath = join(ROOT, 'schema-packs/mybrain-cn-executive/pack.yaml');
   const pack = loadPackFromFile(packPath);

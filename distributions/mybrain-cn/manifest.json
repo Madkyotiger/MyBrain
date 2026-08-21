@@ -1,6 +1,6 @@
 {
-  "schema_version": "mybrain-cn-p0-v1",
-  "status": "p0-candidate",
+  "schema_version": "mybrain-cn-p1-v1",
+  "status": "p1-candidate",
   "generated_on": "2026-08-21",
   "upstream": {
     "repository": "https://github.com/garrytan/gbrain.git",
@@ -10,18 +10,12 @@
   "fork": {
     "repository": "https://github.com/Madkyotiger/MyBrain.git",
     "branch": "master",
-    "allowed_delta_prefixes": [
-      "distributions/mybrain-cn/"
-    ]
+    "allowed_delta_prefixes": ["distributions/mybrain-cn/"]
   },
   "product": {
     "primary_user": "China-based senior brand, marketing, advertising, consulting, or professional-services leader",
     "promise": "A private professional brain that restores sourced context across sessions and exposes what is missing.",
-    "hero_loops": [
-      "meeting-prep",
-      "project-judgment",
-      "weekly-judgment-evolution"
-    ],
+    "hero_loops": ["meeting-prep", "project-judgment", "weekly-judgment-evolution"],
     "mvp_skills": [
       "source-grounded-recall",
       "meeting-prep",
@@ -54,5 +48,35 @@
     "tests/chinese-retrieval-baseline.test.ts",
     "scripts/validate-p0.ts",
     "package.json"
-  ]
+  ],
+  "p1": {
+    "default_runtime": "hermes",
+    "engine": "local-pglite",
+    "mcp_surface": "verbs",
+    "owner_model": {
+      "accountable": "named product owner in the private project control plane",
+      "builder_operator": "MK",
+      "support_owner_required_before": "P2 multi-user pilot"
+    },
+    "required_files": [
+      "fixtures/example-answers.json",
+      "src/cli.ts",
+      "src/onboarding.ts",
+      "src/hermes-adapter.ts",
+      "src/intake.ts",
+      "src/hero-loops.ts",
+      "src/backup.ts",
+      "scripts/validate-p1.ts",
+      "tests/p1-unit.test.ts",
+      "tests/p1-e2e.serial.test.ts"
+    ],
+    "acceptance_proofs": [
+      "fresh-install",
+      "stdio-mcp-conformance",
+      "explicit-intake-and-meeting-prep",
+      "blocked-data-rejection",
+      "fresh-process-correction-readback",
+      "checksum-backup-and-isolated-restore"
+    ]
+  }
 }

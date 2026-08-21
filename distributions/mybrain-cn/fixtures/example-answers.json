@@ -1,0 +1,20 @@
+{
+  "schema_version": "mybrain-cn-onboarding-v1",
+  "user": {
+    "preferred_name": "示例用户",
+    "role": "品牌与增长负责人",
+    "domains": ["品牌", "市场", "专业服务"],
+    "working_languages": ["中文", "English"]
+  },
+  "brain": {
+    "name": "示例专业工作脑",
+    "primary_jobs": ["会前准备", "项目判断", "每周判断进化"],
+    "default_runtime": "hermes",
+    "source_id": "default"
+  },
+  "boundaries": {
+    "allowed_data_classes": ["public", "personal_private", "work_authorized"],
+    "blocked_data_classes": ["org_restricted", "client_or_secret"],
+    "external_model_for_personal_private": false
+  }
+}

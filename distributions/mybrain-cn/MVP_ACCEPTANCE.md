@@ -1,31 +1,34 @@
-# P0 与 MVP 验收
+# P0 / P1 验收
 
-## P0 出口
+## P0：方向与边界
 
 | ID | 验收项 | 状态 | 证据 |
 |---|---|---|---|
-| P0-01 | 产品合同明确用户、承诺、非目标与反转条件 | PASS | `PRODUCT_CONTRACT.md` |
-| P0-02 | 上游基线与 fork 差异可追溯 | PASS | `UPSTREAM_DELTA.md` + Git ancestry check |
-| P0-03 | overlay/core 边界可执行 | PASS | 变更只允许在本目录；validator 会检查 |
+| P0-01 | 用户、承诺、非目标与反转条件明确 | PASS | `PRODUCT_CONTRACT.md` |
+| P0-02 | 上游基线与 fork 差异可追溯 | PASS | `UPSTREAM_DELTA.md` + Git ancestry |
+| P0-03 | overlay/core 边界可执行 | PASS | changed-path validator |
 | P0-04 | 数据分级与禁入规则明确 | PASS | `DATA_CLASSIFICATION.md` + `data-policy.json` |
 | P0-05 | 中文/双语检索基线真实运行 | PASS | `tests/chinese-retrieval-baseline.test.ts` |
-| P0-06 | P0 合同可机器验证 | PASS | `bun run validate` |
+| P0-06 | P0 合同可机器验证 | PASS | `scripts/validate-p0.ts` |
 
-## 进入 P1 前的阻塞
+## P1：单用户可安装 MVP
 
-- **技术 owner：未指定。** 没有 owner，不开始接飞书/微信、不做远程部署、不把维护责任落到产品发起人身上。
-- **首批真实 pilot：未指定。** 至少需要两名目标用户；一人不能证明可迁移性。
-- **runtime 默认：未决定。** P1 需在 Codex/Claude Code 本地路径与 Hermes 常驻路径之间锁一个首选，不同时做两套 onboarding。
+| ID | 必须为真 | 状态 | 真实 proof |
+|---|---|---|---|
+| P1-01 | 全新环境能建 PGLite、Schema、8 Skills 与 Hermes adapter | PASS | isolated fresh install |
+| P1-02 | Hermes 接到的不是假配置，而是可启动的 MCP | PASS | 真实 stdio endpoint，MEMORY_VERBS conformance 通过 |
+| P1-03 | 明确选择的中文材料能支撑第一条会前回路 | PASS | intake → sync → meeting-prep |
+| P1-04 | 受限组织资料与客户机密在落盘前被阻断 | PASS | fail-closed intake test |
+| P1-05 | correction 能跨新进程读回 | PASS | remember → fresh process recall |
+| P1-06 | 恢复不是“有备份文件就算了” | PASS | checksum verify → isolated restore → 页面与 correction 回读 |
 
-## MVP 最终验收
+P1 的 Accountable Owner 已在私有项目控制面明确；MK 是 Builder / Operator。产品发起人不成为默认 helpdesk。非创始人 support owner 要在 P2 多用户 pilot 前落实。
 
-1. 新用户不用理解 70 个 Skill，也能完成一次跨会话记忆回读。
-2. 三条 Hero Loops 至少两条出现重复使用，不只在演示中成立。
-3. 中文姓名、英文别名、中英混合查询稳定通过。
-4. 每个重要结论带来源；缺口和过期信息可见。
-5. 用户纠正后，新会话不再重复同一错误。
-6. `org_restricted` 与 `client_or_secret` 不进入个人 P0 数据面。
-7. 非产品发起人可以完成安装、恢复和常见故障处理。
-8. 上游更新后，overlay 仍可通过完整 P0 gate。
+## 还没有被证明的事
 
-MVP 的成功不是“安装人数”或“Skill 数量”，而是高价值回路被重复使用，且纠正、来源和边界都成立。
+- 两条以上 Hero Loops 在真实工作中出现重复使用。
+- 非产品发起人可以不依赖 Builder，独立完成安装、恢复和常见故障处理。
+- 飞书、微信、远程 Postgres、企业权限与数据驻留已经解决。
+- 合成验收等于产品市场成立。
+
+因此当前状态是 **P1 candidate**，不是“通用 Brain 已经可以大规模交付”。下一阶段的真正工作不是继续加 Skill，而是拿真实用户证明迁移性与重复使用。

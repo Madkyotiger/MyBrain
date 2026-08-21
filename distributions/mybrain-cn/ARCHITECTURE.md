@@ -44,4 +44,6 @@
 
 ## 部署边界
 
-P0 只验证本地 PGLite + 私有 Git 的单用户路径。远程 Postgres、多人权限、飞书/微信连接器、企业 SSO、审计和中国境内数据驻留都需要独立技术与法律评估；本 overlay 不声称已经解决。
+P1 验证本地 PGLite + 私有 Git 的单用户安装路径，并以 Hermes 作为首选 runtime，通过 GBrain stdio MCP 的 `verbs` surface 接入。Hermes adapter 是 overlay；GBrain 协议本身保持 runtime-neutral。
+
+远程 Postgres、多人权限、飞书/微信连接器、企业 SSO、审计和中国境内数据驻留仍需要独立技术与法律评估；本 overlay 不声称已经解决。
