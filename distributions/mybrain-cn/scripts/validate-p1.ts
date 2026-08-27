@@ -49,6 +49,20 @@ export function validateP1() {
     if (!text.includes(`name: ${name}`) || text.length < 300) throw new Error(`Skill is missing or too thin: ${name}`);
   }
 
+  const workflowKernel = readFileSync(join(ROOT, 'src/evidence-workflow.ts'), 'utf8');
+  for (const marker of ['evidence_ids', 'attempted_queries', 'weekly-evolution', 'project-brief']) {
+    if (!workflowKernel.includes(marker)) throw new Error(`evidence workflow kernel is missing contract marker: ${marker}`);
+  }
+  const heroLoops = readFileSync(join(ROOT, 'src/hero-loops.ts'), 'utf8');
+  for (const fn of ['buildMeetingPrep', 'buildProjectBrief', 'buildWeeklyEvolution', 'recordCorrection']) {
+    if (!heroLoops.includes(`function ${fn}`)) throw new Error(`hero-loop runtime is missing ${fn}`);
+  }
+  const cli = readFileSync(join(ROOT, 'src/cli.ts'), 'utf8');
+  const workflowCommands = ['meeting-prep', 'project-brief', 'weekly-evolution', 'correct'];
+  for (const command of workflowCommands) {
+    if (!cli.includes(`case '${command}'`)) throw new Error(`distribution CLI is missing workflow command: ${command}`);
+  }
+
   const acceptance = readJson('mvp-acceptance.json');
   const build = acceptance.release_build as JsonObject[];
   if (build.length !== 9 || build.some((item) => item.status !== 'pass')) {
@@ -70,6 +84,7 @@ export function validateP1() {
     bootstrap_owner: manifest.architecture.bootstrap_owner,
     release_build_proofs: build.map((item) => item.id),
     skills: actualSkills,
+    workflow_commands: workflowCommands,
     mcp_surface: manifest.release.mcp_surface,
     remaining_human_gates: (acceptance.human_validation as JsonObject[])
       .filter((item) => item.status === 'not-run')

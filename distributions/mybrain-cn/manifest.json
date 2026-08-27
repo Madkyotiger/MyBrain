@@ -101,6 +101,8 @@
     "required_files": [
       "src/activation.ts",
       "src/cli.ts",
+      "src/evidence-workflow.ts",
+      "src/hero-loops.ts",
       "src/intake.ts",
       "src/native-workspace.ts",
       "src/hermes-adapter.ts",
@@ -110,6 +112,7 @@
       "DEPLOY_FOR_AGENTS.md",
       "AGENT_HOSTS.md",
       "host-support.json",
+      "tests/evidence-workflow.test.ts",
       "tests/helpers/native-bootstrap-fixture.ts",
       "tests/p1-unit.test.ts",
       "tests/p1-e2e.serial.test.ts",
@@ -118,6 +121,13 @@
       "acceptance/release-evidence-template.json",
       "scripts/validate-native-bootstrap.ts",
       "scripts/validate-p1-2.ts"
+    ],
+    "workflow_kernel": "src/evidence-workflow.ts",
+    "workflow_commands": [
+      "meeting-prep",
+      "project-brief",
+      "weekly-evolution",
+      "correct"
     ]
   },
   "required_files": [
