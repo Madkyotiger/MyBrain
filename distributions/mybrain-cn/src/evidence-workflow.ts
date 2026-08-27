@@ -380,13 +380,17 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
     || typeof envelope.degraded_reason === 'string'
   ));
   const hasMore = envelopes.some((envelope) => envelope.has_more === true);
+  const unknowns = buildUnknowns(options.workflow, coverage);
+  if (degraded) unknowns.push('检索发生降级；当前证据可能不完整，结论不能视为穷尽。');
+  if (droppedCount > 0) unknowns.push(`证据预算截断了 ${droppedCount} 条候选；需要扩大预算或缩小问题范围。`);
+  if (hasMore) unknowns.push('变化结果仍有未交付的尾部；继续读取下一游标后才能判断完整性。');
 
   return {
     workflow: options.workflow,
     query,
     evidence: finalEvidence,
     claims: claimsFromEvidence(finalEvidence),
-    unknowns: buildUnknowns(options.workflow, coverage),
+    unknowns,
     sources: uniqueSources(finalEvidence),
     retrieval: {
       protocol_version: envelopes[0]?.protocol_version ?? null,

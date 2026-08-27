@@ -168,7 +168,7 @@ describe('MyBrain evidence workflow kernel', () => {
           {
             slug: 'briefs/complete',
             title: '完整背景',
-            chunk: '项目目标是四周内完成试点。',
+            chunk: )项目目标是四周内完成试点。',
           },
           {
             slug: 'decisions/complete',
@@ -244,6 +244,32 @@ describe('MyBrain evidence workflow kernel', () => {
     expect(result.claims).toEqual([]);
     expect(result.unknowns).toContain('未找到足够的当前背景材料。');
     expect(result.unknowns).toContain('未找到带负责人或期限的当前承诺。');
+  });
+
+  test('degraded, budget-trimmed, and incomplete retrieval remains visible in unknowns', () => {
+    const caller: VerbCaller = () => ({
+      protocol_version: 1,
+      pages: [],
+      facts: [],
+      threads: [],
+      degraded_reason: 'bounded_partial',
+      dropped_count: 2,
+      has_more: true,
+    });
+    const result = collectEvidenceWorkflow({
+      workflow: 'weekly-evolution',
+      stateRoot: '/tmp/state',
+      query: '本周判断变化',
+      caller,
+      maxCalls: 1,
+      now: new Date('2026-08-27T00:00:00Z'),
+    });
+    expect(result.retrieval.degraded).toBe(true);
+    expect(result.retrieval.dropped_count).toBe(2);
+    expect(result.retrieval.has_more).toBe(true);
+    expect(result.unknowns.some((item) => item.includes('检索发生降级'))).toBe(true);
+    expect(result.unknowns.some((item) => item.includes('预算截断'))).toBe(true);
+    expect(result.unknowns.some((item) => item.includes('未交付的尾部'))).toBe(true);
   });
 
   test('correction refuses a read-back that returns a different fact id', () => {
