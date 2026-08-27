@@ -11,7 +11,7 @@
     "validate:native": "bun scripts/validate-native-bootstrap.ts",
     "validate:hosts": "bun scripts/validate-p1-2.ts",
     "test": "bun test tests",
-    "test:native": "bun test tests/p1-unit.test.ts && bun test tests/p1-e2e.serial.test.ts",
+    "test:native": "bun test tests/evidence-workflow.test.ts tests/p1-unit.test.ts && bun test tests/p1-e2e.serial.test.ts",
     "test:hosts": "bun test tests/p1-2-hosts.test.ts",
     "p0": "bun run validate && bun test tests/p0-contract.test.ts tests/chinese-retrieval-baseline.test.ts",
     "p1": "bun run validate:p1 && bun run test:native",

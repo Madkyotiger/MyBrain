@@ -1,7 +1,12 @@
 #!/usr/bin/env bun
 import { parseFlags, requiredFlag } from './common.ts';
 import { createBackup, restoreBackup, verifyBackup } from './backup.ts';
-import { buildMeetingPrep, recordCorrection } from './hero-loops.ts';
+import {
+  buildMeetingPrep,
+  buildProjectBrief,
+  buildWeeklyEvolution,
+  recordCorrection,
+} from './hero-loops.ts';
 import { intakeFile, type DataClass } from './intake.ts';
 import { configureHermesAdapter } from './hermes-adapter.ts';
 import { configureWorkBuddyAdapter } from './workbuddy-adapter.ts';
@@ -10,7 +15,7 @@ import { createFeishuAilyHandoff } from './feishu-aily-handoff.ts';
 import { activateMyBrain, verifyMyBrain } from './activation.ts';
 import { runGbrain } from './gbrain-runtime.ts';
 
-const HELP = `@MyBrain CN\n\nPrimary bootstrap:\n  Follow distributions/mybrain-cn/BOOTSTRAP_FOR_AGENTS.md. GBrain native bootstrap owns preflight, engine, interview, render, skills, harness wiring, repo, and verify.\n\nDistribution commands:\n  mybrain-cn activate --workspace <abs> --state-root <abs> [--force]\n  mybrain-cn verify --workspace <abs> --state-root <abs>\n  mybrain-cn runtime hermes --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime workbuddy --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime deepseek-harness --patch <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime feishu-aily --url <https-url> --output <abs> [--auth-header Authorization]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> [--source-id <native-id>] [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs>\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nAutomatic native bootstrap hosts: Claude Code, Codex, and opencode. Hermes, WorkBuddy, and DeepSeek Harness attach after native bootstrap. Feishu Aily uses a remote MCP registration handoff. Doubao Desktop is not claimed until an official extension/MCP interface is available.\n`;
+const HELP = `@MyBrain CN\n\nPrimary bootstrap:\n  Follow distributions/mybrain-cn/BOOTSTRAP_FOR_AGENTS.md. GBrain native bootstrap owns preflight, engine, interview, render, skills, harness wiring, repo, and verify.\n\nDistribution commands:\n  mybrain-cn activate --workspace <abs> --state-root <abs> [--force]\n  mybrain-cn verify --workspace <abs> --state-root <abs>\n  mybrain-cn runtime hermes --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime workbuddy --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime deepseek-harness --patch <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime feishu-aily --url <https-url> --output <abs> [--auth-header Authorization]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> [--source-id <native-id>] [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs> [--entity <name-or-slug>]\n  mybrain-cn project-brief --query <text> --state-root <abs> [--entity <name-or-slug>]\n  mybrain-cn weekly-evolution --state-root <abs> [--query <text>] [--since <iso-date>]\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nAutomatic native bootstrap hosts: Claude Code, Codex, and opencode. Hermes, WorkBuddy, and DeepSeek Harness attach after native bootstrap. Feishu Aily uses a remote MCP registration handoff. Doubao Desktop is not claimed until an official extension/MCP interface is available.\n`;
 
 function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -88,6 +93,25 @@ async function main(): Promise<void> {
     case 'meeting-prep': {
       output(buildMeetingPrep({
         query: requiredFlag(values, '--query'),
+        entity: values.get('--entity'),
+        stateRoot: requiredFlag(values, '--state-root'),
+        gbrainCli,
+      }));
+      return;
+    }
+    case 'project-brief': {
+      output(buildProjectBrief({
+        query: requiredFlag(values, '--query'),
+        entity: values.get('--entity'),
+        stateRoot: requiredFlag(values, '--state-root'),
+        gbrainCli,
+      }));
+      return;
+    }
+    case 'weekly-evolution': {
+      output(buildWeeklyEvolution({
+        query: values.get('--query')?.trim() || '本周判断变化',
+        since: values.get('--since'),
         stateRoot: requiredFlag(values, '--state-root'),
         gbrainCli,
       }));
