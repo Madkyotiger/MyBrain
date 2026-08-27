@@ -356,6 +356,18 @@ describe('MyBrain evidence workflow kernel', () => {
 
   test('workflow-specific call caps floor fractional overrides', () => {
     const caller: VerbCaller = () => ({ protocol_version: 1, results: [], facts: [], pages: [], threads: [] });
+    const weeklyCaller: VerbCaller = (verb) => verb === 'delta'
+      ? {
+        protocol_version: 1,
+        pages: [{ slug: 'decisions/changed', title: '本周范围决定', updated_at: '2026-08-26T00:00:00Z' }],
+        facts: [],
+        threads: [],
+      }
+      : {
+        protocol_version: 1,
+        results: [{ slug: 'decisions/changed', title: '本周范围决定', chunk: '已决定缩小试点范围。' }],
+        facts: [],
+      };
     const fractional = collectEvidenceWorkflow({
       workflow: 'project-brief',
       stateRoot: '/tmp/state',
@@ -381,7 +393,7 @@ describe('MyBrain evidence workflow kernel', () => {
       workflow: 'weekly-evolution',
       stateRoot: '/tmp/state',
       query: '本周变化',
-      caller,
+      caller: weeklyCaller,
       maxCalls: 99,
     });
 
@@ -419,6 +431,209 @@ describe('MyBrain evidence workflow kernel', () => {
     expect(weekly.corrections).toHaveLength(1);
     expect(weekly.quality.unbound_claims).toBe(0);
     expect(weekly.claims.some((claim) => claim.text === '试点范围决定')).toBe(false);
+  });
+
+  test('weekly evolution hydrates only delta-member pages and excludes historical recall hits', () => {
+    const seen: SeenCall[] = [];
+    const caller: VerbCaller = (verb, params) => {
+      seen.push({ verb, params });
+      if (verb === 'delta') {
+        return {
+          protocol_version: 1,
+          pages: [{
+            slug: 'decisions/this-week',
+            title: '本周范围决定',
+            updated_at: '2026-08-26T00:00:00Z',
+          }],
+          facts: [],
+          threads: [],
+          has_more: false,
+        };
+      }
+      return {
+        protocol_version: 1,
+        results: [
+          {
+            slug: 'decisions/this-week',
+            title: '本周范围决定',
+            chunk: '已决定缩小本轮试点范围。',
+          },
+          {
+            slug: 'decisions/2024-old',
+            title: '历史推广决定',
+            chunk: '两年前已决定全国推广。',
+          },
+        ],
+        facts: [],
+      };
+    };
+
+    const result = buildWeeklyEvolution({
+      stateRoot: '/tmp/state',
+      query: '本周判断变化',
+      caller,
+      now: new Date('2026-08-27T00:00:00Z'),
+    });
+
+    expect(seen.map((item) => item.verb)).toEqual(['delta', 'recall']);
+    expect(result.decisions).toHaveLength(1);
+    expect(result.decisions[0].source).toBe('decisions/this-week');
+    expect(result.claims.map((claim) => claim.text)).toEqual(['已决定缩小本轮试点范围。']);
+    expect(result.evidence.some((item) => item.source === 'decisions/2024-old')).toBe(false);
+  });
+
+  test('weekly delta exposes and accepts the composite continuation cursor', () => {
+    const cursor = { since: '2026-08-26T09:30:00.000Z', slug: 'decisions/cursor-anchor' };
+    const first = collectEvidenceWorkflow({
+      workflow: 'weekly-evolution',
+      stateRoot: '/tmp/state',
+      query: '本周变化',
+      since: '2026-08-20T00:00:00Z',
+      caller: () => ({
+        protocol_version: 1,
+        pages: [],
+        facts: [],
+        threads: [],
+        has_more: true,
+        next_cursor: cursor,
+      }),
+    });
+    expect(first.retrieval.next_cursor).toEqual(cursor);
+
+    const seen: SeenCall[] = [];
+    const second = collectEvidenceWorkflow({
+      workflow: 'weekly-evolution',
+      stateRoot: '/tmp/state',
+      query: '本周变化',
+      since: cursor.since,
+      sinceSlug: cursor.slug,
+      caller: (verb, params) => {
+        seen.push({ verb, params });
+        return { protocol_version: 1, pages: [], facts: [], threads: [], has_more: false };
+      },
+    });
+    expect(seen[0]).toMatchObject({
+      verb: 'delta',
+      params: { since: cursor.since, since_slug: cursor.slug },
+    });
+    expect(second.retrieval.since_slug).toBe(cursor.slug);
+    expect(() => collectEvidenceWorkflow({
+      workflow: 'weekly-evolution',
+      stateRoot: '/tmp/state',
+      query: '本周变化',
+      sinceSlug: cursor.slug,
+      caller: () => ({ protocol_version: 1 }),
+    })).toThrow('--since-slug requires an explicit --since cursor');
+  });
+
+  test('weekly delta and recall merge the same fact into one traceable claim', () => {
+    const fact = '示例负责人承诺周五提交权限清单。';
+    const caller: VerbCaller = (verb) => verb === 'delta'
+      ? {
+        protocol_version: 1,
+        pages: [],
+        facts: [{
+          fact,
+          kind: 'commitment',
+          entity_slug: 'projects/beichen',
+          valid_from: '2026-08-26T10:00:00Z',
+        }],
+        threads: [],
+        has_more: false,
+      }
+      : {
+        protocol_version: 1,
+        results: [],
+        facts: [
+          {
+            fact_id: 'commitment-old',
+            fact,
+            kind: 'commitment',
+            entity_slug: 'projects/beichen',
+            provenance: 'meetings/2025-08-26',
+            visibility: 'world',
+            valid_from: '2025-08-26T10:00:00Z',
+          },
+          {
+            fact_id: 'commitment-1',
+            fact,
+            kind: 'commitment',
+            entity_slug: 'projects/beichen',
+            provenance: 'meetings/2026-08-26',
+            visibility: 'world',
+            valid_from: '2026-08-26T10:00:00Z',
+          },
+        ],
+      };
+
+    const result = buildWeeklyEvolution({
+      stateRoot: '/tmp/state',
+      query: '本周变化',
+      caller,
+      now: new Date('2026-08-27T00:00:00Z'),
+    });
+    const matchingEvidence = result.evidence.filter((item) => item.excerpt === fact);
+
+    expect(result.commitments).toHaveLength(1);
+    expect(result.claims).toHaveLength(1);
+    expect(matchingEvidence).toHaveLength(1);
+    expect(matchingEvidence[0]).toMatchObject({
+      fact_id: 'commitment-1',
+      provenance: 'meetings/2026-08-26',
+      source: 'meetings/2026-08-26',
+      query_slot: 'delta+standing-context',
+    });
+  });
+
+  test('fact identity keeps identical text separate across entities', () => {
+    const fact = '负责人承诺周五提交权限清单。';
+    const result = buildWeeklyEvolution({
+      stateRoot: '/tmp/state',
+      query: '本周变化',
+      caller: (verb) => verb === 'delta'
+        ? {
+          protocol_version: 1,
+          pages: [],
+          facts: [
+            { fact, kind: 'commitment', entity_slug: 'projects/alpha', valid_from: '2026-08-26T10:00:00Z' },
+            { fact, kind: 'commitment', entity_slug: 'projects/beta', valid_from: '2026-08-26T10:00:00Z' },
+          ],
+          threads: [],
+          has_more: false,
+        }
+        : { protocol_version: 1, results: [], facts: [] },
+      now: new Date('2026-08-27T00:00:00Z'),
+    });
+
+    expect(result.commitments).toHaveLength(2);
+    expect(result.claims).toHaveLength(2);
+    expect(result.commitments.map((item) => item.entity_slug).sort()).toEqual([
+      'projects/alpha',
+      'projects/beta',
+    ]);
+    expect(new Set(result.commitments.map((item) => item.evidence_id)).size).toBe(2);
+  });
+
+  test('unknown recall visibility is reported and treated as possibly private', () => {
+    const result = collectEvidenceWorkflow({
+      workflow: 'meeting-prep',
+      stateRoot: '/tmp/state',
+      query: '示例项目',
+      maxCalls: 1,
+      caller: () => ({
+        protocol_version: 1,
+        results: [{
+          slug: 'briefs/scoped',
+          title: '来源可见性未披露',
+          chunk: '当前材料没有 visibility 字段。',
+        }],
+        facts: [],
+      }),
+    });
+
+    expect(result.retrieval.includes_private).toBe(true);
+    expect(result.retrieval.visibility_unknown_count).toBe(1);
+    expect(result.unknowns.some((item) => item.includes('按可能私密处理'))).toBe(true);
   });
 
   test('empty evidence remains an explicit unknown instead of a fabricated answer', () => {
@@ -480,9 +695,11 @@ describe('MyBrain evidence workflow kernel', () => {
     expect(result.retrieval.degraded).toBe(true);
     expect(result.retrieval.dropped_count).toBe(2);
     expect(result.retrieval.has_more).toBe(true);
+    expect(result.retrieval.next_cursor).toBeNull();
     expect(result.unknowns.some((item) => item.includes('检索发生降级'))).toBe(true);
     expect(result.unknowns.some((item) => item.includes('预算截断'))).toBe(true);
     expect(result.unknowns.some((item) => item.includes('未交付的尾部'))).toBe(true);
+    expect(result.unknowns.some((item) => item.includes('没有返回可用的 next_cursor'))).toBe(true);
   });
 
   test('correction refuses a read-back that returns a different fact id', () => {
@@ -528,6 +745,33 @@ describe('MyBrain evidence workflow kernel', () => {
       provenance: '用户纠正 2026-08-27',
       caller: expandedText,
     })).toThrow('did not verify');
+  });
+
+  test('duplicate correction reports an unverified no-op when the old fact is beyond recall limit', () => {
+    const fact = '北辰项目试点范围已经改为单一业务单元。';
+    const caller: VerbCaller = (verb) => verb === 'remember'
+      ? { protocol_version: 1, id: '5', status: 'duplicate' }
+      : {
+        protocol_version: 1,
+        facts: Array.from({ length: 20 }, (_, index) => ({
+          fact_id: String(100 + index),
+          fact: `较新的无关事实 ${index}`,
+        })),
+      };
+
+    const result = recordCorrection({
+      stateRoot: '/tmp/state',
+      fact,
+      provenance: '用户纠正 2026-08-27',
+      caller,
+    });
+    expect(result.status).toBe('duplicate');
+    expect(result.verification).toEqual({
+      verified: false,
+      fact_id: '5',
+      provenance: '用户纠正 2026-08-27',
+      reason: 'duplicate_read_back_not_available',
+    });
   });
 
   test('correction reports success only after a fresh recall verifies it', () => {

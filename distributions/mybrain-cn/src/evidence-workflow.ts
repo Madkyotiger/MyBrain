@@ -21,6 +21,7 @@ export interface EvidenceReference {
   excerpt: string;
   source: string;
   source_id: string | null;
+  entity_slug: string | null;
   provenance: string | null;
   visibility: string | null;
   fact_id: string | null;
@@ -56,10 +57,14 @@ export interface EvidenceRetrievalReceipt {
   calls: number;
   coverage: EvidenceCoverage;
   has_more: boolean;
+  next_cursor: { since: string; slug: string } | null;
   since: string | null;
+  since_slug: string | null;
   entity: string | null;
   source_id: string | null;
   includes_private: boolean;
+  visibility_unknown_count: number;
+  freshness_unknown_count: number;
 }
 
 export interface EvidenceWorkflowResult {
@@ -78,6 +83,7 @@ export interface EvidenceWorkflowOptions {
   query: string;
   gbrainCli?: string;
   since?: string;
+  sinceSlug?: string;
   entity?: string;
   sourceId?: string;
   now?: Date;
@@ -219,13 +225,20 @@ function normalizeEvidence(
   const excerpt = compactText(substantive ?? firstString(record, ['title']) ?? '');
   if (!excerpt) return null;
   const title = compactText(firstString(record, ['title', 'entity_title', 'slug', 'fact']) ?? '未命名证据');
-  const source = firstString(record, ['slug', 'provenance', 'source_id']) ?? 'unknown';
+  // callVerb without --source is scoped by GBrain to the literal default source.
+  // Keep source_id null to show the caller did not explicitly pin it, but do not
+  // turn a protocol-native delta fact into an untraceable or unusable record.
+  const source = firstString(record, ['slug', 'provenance', 'source_id']) ?? sourceId ?? 'default';
+  const entitySlug = firstString(record, ['entity_slug', 'entity']);
   const provenance = firstString(record, ['provenance']);
-  const visibility = firstString(record, ['visibility']);
+  // Core delta is WORLD-only unless include_private is explicitly requested;
+  // this overlay never widens it. Recall page results do not expose page
+  // visibility/source_class, so their missing value must stay unknown.
+  const visibility = firstString(record, ['visibility']) ?? (slot === 'delta' ? 'world' : null);
   const factId = firstString(record, ['fact_id', 'id']);
   const observedAt = firstString(record, ['updated_at', 'observed_at', 'effective_at', 'created_at', 'recorded_at', 'valid_from', 'date']);
   const freshness = evidenceFreshness(record, now);
-  const evidenceId = stableId('ev', [sourceId, factId, source, excerpt]);
+  const evidenceId = stableId('ev', [sourceId, factId, entitySlug, source, observedAt, excerpt]);
 
   return {
     evidence_id: evidenceId,
@@ -235,6 +248,7 @@ function normalizeEvidence(
     excerpt,
     source,
     source_id: sourceId,
+    entity_slug: entitySlug,
     provenance,
     visibility,
     fact_id: factId,
@@ -264,16 +278,78 @@ function evidenceFromEnvelope(
     .filter((item): item is EvidenceReference => item !== null);
 }
 
-function dedupeEvidence(items: EvidenceReference[]): EvidenceReference[] {
-  const byId = new Map<string, EvidenceReference>();
-  const byContent = new Set<string>();
-  for (const item of items) {
-    const contentKey = `${item.source_id ?? 'unresolved'}\n${item.kind}\n${item.source}\n${item.excerpt}`;
-    if (byId.has(item.evidence_id) || byContent.has(contentKey)) continue;
-    byId.set(item.evidence_id, item);
-    byContent.add(contentKey);
+function evidenceIdentity(item: EvidenceReference): string {
+  const scope = item.source_id ?? 'unresolved';
+  if (item.record_type === 'fact') {
+    if (item.fact_id) return `fact-id\n${scope}\n${item.fact_id}`;
+    return `fact-content\n${scope}\n${item.kind}\n${item.entity_slug ?? ''}\n${item.source}\n${item.observed_at ?? ''}\n${compactText(item.excerpt).toLowerCase()}`;
   }
-  return [...byId.values()];
+  if ((item.record_type === 'page' || item.record_type === 'result') && item.source !== 'unknown') {
+    return `page\n${scope}\n${item.source}`;
+  }
+  return `record\n${scope}\n${item.record_type}\n${item.kind}\n${item.entity_slug ?? ''}\n${compactText(item.excerpt).toLowerCase()}`;
+}
+
+function evidenceRichness(item: EvidenceReference): number {
+  return (item.claimable ? 16 : 0)
+    + (item.fact_id ? 8 : 0)
+    + (item.provenance ? 4 : 0)
+    + (item.source !== 'unknown' ? 4 : 0)
+    + (item.visibility ? 2 : 0)
+    + (item.entity_slug ? 1 : 0)
+    + (item.observed_at ? 1 : 0);
+}
+
+function mergeEvidence(left: EvidenceReference, right: EvidenceReference): EvidenceReference {
+  const preferred = evidenceRichness(right) > evidenceRichness(left) ? right : left;
+  const other = preferred === left ? right : left;
+  const querySlots = [...new Set([left.query_slot, right.query_slot].flatMap((slot) => slot.split('+')))];
+  return {
+    ...preferred,
+    source_id: preferred.source_id ?? other.source_id,
+    entity_slug: preferred.entity_slug ?? other.entity_slug,
+    provenance: preferred.provenance ?? other.provenance,
+    visibility: preferred.visibility ?? other.visibility,
+    fact_id: preferred.fact_id ?? other.fact_id,
+    observed_at: preferred.observed_at ?? other.observed_at,
+    freshness: preferred.freshness !== 'unknown' ? preferred.freshness : other.freshness,
+    current: preferred.current && other.current,
+    claimable: preferred.claimable || other.claimable,
+    match_reason: preferred.match_reason ?? other.match_reason,
+    query_slot: querySlots.join('+'),
+  };
+}
+
+function dedupeEvidence(items: EvidenceReference[]): EvidenceReference[] {
+  const deduped: EvidenceReference[] = [];
+  const indexByIdentity = new Map<string, number>();
+  const indexById = new Map<string, number>();
+  const indexByDeltaFact = new Map<string, number>();
+  for (const item of items) {
+    const identity = evidenceIdentity(item);
+    const deltaFactKey = item.record_type === 'fact' ? factMembershipKey(item) : null;
+    const existingIndex = indexById.get(item.evidence_id)
+      ?? indexByIdentity.get(identity)
+      ?? (deltaFactKey !== null && item.query_slot === 'standing-context'
+        ? indexByDeltaFact.get(deltaFactKey)
+        : undefined);
+    if (existingIndex === undefined) {
+      const index = deduped.push(item) - 1;
+      indexByIdentity.set(identity, index);
+      indexById.set(item.evidence_id, index);
+      if (deltaFactKey !== null && item.query_slot === 'delta') indexByDeltaFact.set(deltaFactKey, index);
+      continue;
+    }
+    const merged = mergeEvidence(deduped[existingIndex], item);
+    deduped[existingIndex] = merged;
+    indexByIdentity.set(evidenceIdentity(merged), existingIndex);
+    indexById.set(merged.evidence_id, existingIndex);
+  }
+  return deduped;
+}
+
+function factMembershipKey(item: EvidenceReference): string {
+  return `${item.kind}\n${item.entity_slug ?? ''}\n${item.observed_at ?? ''}\n${compactText(item.excerpt).toLowerCase()}`;
 }
 
 function coverageFor(items: EvidenceReference[]): EvidenceCoverage {
@@ -333,6 +409,14 @@ function normalizedSince(options: EvidenceWorkflowOptions, now: Date): string {
   return new Date(now.getTime() - 7 * DAY_MS).toISOString();
 }
 
+function normalizedSinceSlug(options: EvidenceWorkflowOptions): string | null {
+  if (!options.sinceSlug?.trim()) return null;
+  if (!options.since?.trim()) throw new Error('--since-slug requires an explicit --since cursor.');
+  const value = options.sinceSlug.trim();
+  if (value.length > 512 || value.includes('\0')) throw new Error('Invalid --since-slug cursor.');
+  return value;
+}
+
 function queryWithSuffix(query: string, suffix: string): string {
   return compactText(`${query} ${suffix}`);
 }
@@ -369,19 +453,39 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
   const attemptedQueries: string[] = [];
   const evidence: EvidenceReference[] = [];
 
-  const run = (verb: string, params: Record<string, unknown>, slot: string, label: string): void => {
+  const run = (
+    verb: string,
+    params: Record<string, unknown>,
+    slot: string,
+    label: string,
+    accept?: (item: EvidenceReference) => boolean,
+  ): void => {
     if (envelopes.length >= maxCalls) return;
     const envelope = caller(verb, params, runtimeOptions);
     envelopes.push(envelope);
     attemptedQueries.push(label);
-    evidence.push(...evidenceFromEnvelope(envelope, slot, now, sourceId));
+    const found = evidenceFromEnvelope(envelope, slot, now, sourceId);
+    evidence.push(...(accept ? found.filter(accept) : found));
   };
 
   let since: string | null = null;
+  let sinceSlug: string | null = null;
   if (options.workflow === 'weekly-evolution') {
     since = normalizedSince(options, now);
-    run('delta', { since, budget_tokens: 2600 }, 'delta', `delta:${since}`);
+    sinceSlug = normalizedSinceSlug(options);
+    run('delta', {
+      since,
+      ...(sinceSlug ? { since_slug: sinceSlug } : {}),
+      budget_tokens: 2600,
+    }, 'delta', `delta:${since}${sinceSlug ? `:${sinceSlug}` : ''}`);
     if (envelopes.length < maxCalls) {
+      const deltaEvidence = evidence.filter((item) => item.query_slot === 'delta');
+      const changedPageSources = new Set(deltaEvidence
+        .filter((item) => item.record_type === 'page' && item.source !== 'unknown')
+        .map((item) => item.source));
+      const deltaFactKeys = new Set(deltaEvidence
+        .filter((item) => item.record_type === 'fact')
+        .map(factMembershipKey));
       const changedPages = asRecordArray(envelopes[0]?.pages)
         .map((page) => firstString(page, ['title', 'slug']))
         .filter((value): value is string => value !== null)
@@ -389,7 +493,21 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
       const standingQuery = changedPages.length > 0
         ? queryWithSuffix(query, changedPages.join(' '))
         : query;
-      run('recall', { query: standingQuery, limit: 8, budget_tokens: 1600 }, 'standing-context', standingQuery);
+      if (changedPageSources.size > 0 || deltaFactKeys.size > 0) {
+        run(
+          'recall',
+          { query: standingQuery, limit: 8, budget_tokens: 1600 },
+          'standing-context',
+          standingQuery,
+          (item) => {
+            if (item.record_type === 'result' || item.record_type === 'page') {
+              return changedPageSources.has(item.source);
+            }
+            if (item.record_type === 'fact') return deltaFactKeys.has(factMembershipKey(item));
+            return false;
+          },
+        );
+      }
     }
   } else {
     run('recall', {
@@ -446,10 +564,25 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
     || typeof envelope.degraded_reason === 'string'
   ));
   const hasMore = envelopes.some((envelope) => envelope.has_more === true);
+  const cursorRecord = isRecord(envelopes[0]?.next_cursor) ? envelopes[0].next_cursor : null;
+  const nextCursor = cursorRecord
+    && typeof cursorRecord.since === 'string'
+    && typeof cursorRecord.slug === 'string'
+    ? { since: cursorRecord.since, slug: cursorRecord.slug }
+    : null;
   const unknowns = buildUnknowns(options.workflow, coverage);
+  const visibilityUnknownCount = finalEvidence.filter((item) => item.claimable && item.visibility === null).length;
+  const freshnessUnknownCount = finalEvidence.filter((item) => item.claimable && item.freshness === 'unknown').length;
   if (degraded) unknowns.push('检索发生降级；当前证据可能不完整，结论不能视为穷尽。');
   if (droppedCount > 0) unknowns.push(`证据预算截断了 ${droppedCount} 条候选；需要扩大预算或缩小问题范围。`);
-  if (hasMore) unknowns.push('变化结果仍有未交付的尾部；继续读取下一游标后才能判断完整性。');
+  if (hasMore) unknowns.push('变化结果仍有未交付的尾部；使用 next_cursor 续读后才能判断完整性。');
+  if (hasMore && !nextCursor) unknowns.push('检索声明仍有尾部，但没有返回可用的 next_cursor；当前调用无法安全续读。');
+  if (visibilityUnknownCount > 0) {
+    unknowns.push(`${visibilityUnknownCount} 条证据的可见性无法由 recall 合同确认；按可能私密处理，勿直接外发。`);
+  }
+  if (freshnessUnknownCount > 0) {
+    unknowns.push(`${freshnessUnknownCount} 条证据缺少可验证的时间锚点；“未发现失效”不等于“已证明仍然有效”。`);
+  }
 
   return {
     workflow: options.workflow,
@@ -466,10 +599,16 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
       calls: envelopes.length,
       coverage,
       has_more: hasMore,
+      next_cursor: nextCursor,
       since,
+      since_slug: sinceSlug,
       entity,
       source_id: sourceId,
-      includes_private: finalEvidence.some((item) => item.visibility === 'private'),
+      // Unknown visibility is conservative: false is reserved for evidence
+      // proven world-only. Downstream callers can inspect the unknown count.
+      includes_private: finalEvidence.some((item) => item.visibility === 'private') || visibilityUnknownCount > 0,
+      visibility_unknown_count: visibilityUnknownCount,
+      freshness_unknown_count: freshnessUnknownCount,
     },
   };
 }

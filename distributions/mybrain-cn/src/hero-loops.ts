@@ -10,8 +10,13 @@ import {
 export interface CorrectionReceipt extends Record<string, unknown> {
   verification: {
     verified: true;
-    fact_id: string | null;
+    fact_id: string;
     provenance: string;
+  } | {
+    verified: false;
+    fact_id: string;
+    provenance: string;
+    reason: 'duplicate_read_back_not_available';
   };
 }
 
@@ -21,6 +26,7 @@ export interface LoopOptions {
   gbrainCli?: string;
   sourceId?: string;
   since?: string;
+  sinceSlug?: string;
   entity?: string;
   now?: Date;
   caller?: VerbCaller;
@@ -31,6 +37,7 @@ type PresentedEvidence = {
   title: string;
   excerpt: string;
   source: string;
+  entity_slug: string | null;
   provenance: string | null;
   visibility: string | null;
   fact: string;
@@ -45,6 +52,7 @@ function present(item: EvidenceReference): PresentedEvidence {
     title: item.title,
     excerpt: item.excerpt,
     source: item.source,
+    entity_slug: item.entity_slug,
     provenance: item.provenance,
     visibility: item.visibility,
     fact: item.excerpt,
@@ -166,6 +174,7 @@ export function buildWeeklyEvolution(options: LoopOptions) {
     stateRoot: options.stateRoot,
     query: options.query,
     since: options.since,
+    sinceSlug: options.sinceSlug,
     gbrainCli: options.gbrainCli,
     sourceId: options.sourceId,
     now: options.now,
@@ -239,6 +248,17 @@ export function recordCorrection(options: {
     typeof item.fact_id === 'string' && item.fact_id === expectedId
   ));
   if (!matched) {
+    if (write.status === 'duplicate') {
+      return {
+        ...write,
+        verification: {
+          verified: false,
+          fact_id: expectedId,
+          provenance: options.provenance,
+          reason: 'duplicate_read_back_not_available',
+        },
+      };
+    }
     throw new Error('Correction write completed, but a fresh recall did not verify the corrected fact.');
   }
   return {
