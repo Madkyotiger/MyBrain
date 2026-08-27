@@ -9,6 +9,10 @@ export interface RunGbrainOptions {
   allowFailure?: boolean;
 }
 
+export interface CallVerbOptions extends RunGbrainOptions {
+  sourceId?: string;
+}
+
 export interface RunResult {
   code: number;
   stdout: string;
@@ -37,9 +41,14 @@ export function runGbrain(args: string[], options: RunGbrainOptions): RunResult 
 export function callVerb(
   verb: string,
   params: Record<string, unknown>,
-  options: RunGbrainOptions,
+  options: CallVerbOptions,
 ): Record<string, unknown> {
-  const result = runGbrain(['call', verb, JSON.stringify(params)], options);
+  const result = runGbrain([
+    'call',
+    ...(options.sourceId ? ['--source', options.sourceId] : []),
+    verb,
+    JSON.stringify(params),
+  ], options);
   const outer = JSON.parse(result.stdout) as Record<string, unknown> & {
     content?: Array<{ type?: string; text?: string }>;
     isError?: boolean;

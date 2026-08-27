@@ -16,6 +16,7 @@ import { activateMyBrain, verifyMyBrain } from './activation.ts';
 import { runGbrain } from './gbrain-runtime.ts';
 
 const HELP = `@MyBrain CN\n\nPrimary bootstrap:\n  Follow distributions/mybrain-cn/BOOTSTRAP_FOR_AGENTS.md. GBrain native bootstrap owns preflight, engine, interview, render, skills, harness wiring, repo, and verify.\n\nDistribution commands:\n  mybrain-cn activate --workspace <abs> --state-root <abs> [--force]\n  mybrain-cn verify --workspace <abs> --state-root <abs>\n  mybrain-cn runtime hermes --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime workbuddy --config <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime deepseek-harness --patch <abs> --workspace <abs> --state-root <abs> [--source-id <registered-id>] [--force]\n  mybrain-cn runtime feishu-aily --url <https-url> --output <abs> [--auth-header Authorization]\n  mybrain-cn intake --file <abs> --workspace <abs> --class <class> [--source-id <native-id>] [--sync --state-root <abs>]\n  mybrain-cn meeting-prep --query <text> --state-root <abs> [--entity <name-or-slug>]\n  mybrain-cn project-brief --query <text> --state-root <abs> [--entity <name-or-slug>]\n  mybrain-cn weekly-evolution --state-root <abs> [--query <text>] [--since <iso-date>]\n  mybrain-cn correct --fact <text> --provenance <text> --state-root <abs> [--entity <name>]\n  mybrain-cn backup --workspace <abs> --state-root <abs> --output <abs>\n  mybrain-cn backup-verify --backup <abs>\n  mybrain-cn restore --backup <abs> --target-workspace <abs> --target-state-root <abs> [--force]\n  mybrain-cn doctor --state-root <abs>\n\nAutomatic native bootstrap hosts: Claude Code, Codex, and opencode. Hermes, WorkBuddy, and DeepSeek Harness attach after native bootstrap. Feishu Aily uses a remote MCP registration handoff. Doubao Desktop is not claimed until an official extension/MCP interface is available.\n`;
+const WORKFLOW_HELP = `${HELP}\nEvidence workflow source isolation: meeting-prep, project-brief, weekly-evolution, and correct accept --source-id <registered-id>.\n`;
 
 function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
@@ -24,7 +25,7 @@ function output(value: unknown): void {
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
   if (!command || command === '--help' || command === '-h') {
-    process.stdout.write(HELP);
+    process.stdout.write(WORKFLOW_HELP);
     return;
   }
   const { values, booleans, positionals } = parseFlags(rest);
@@ -94,6 +95,7 @@ async function main(): Promise<void> {
       output(buildMeetingPrep({
         query: requiredFlag(values, '--query'),
         entity: values.get('--entity'),
+        sourceId: values.get('--source-id'),
         stateRoot: requiredFlag(values, '--state-root'),
         gbrainCli,
       }));
@@ -103,6 +105,7 @@ async function main(): Promise<void> {
       output(buildProjectBrief({
         query: requiredFlag(values, '--query'),
         entity: values.get('--entity'),
+        sourceId: values.get('--source-id'),
         stateRoot: requiredFlag(values, '--state-root'),
         gbrainCli,
       }));
@@ -112,6 +115,7 @@ async function main(): Promise<void> {
       output(buildWeeklyEvolution({
         query: values.get('--query')?.trim() || '本周判断变化',
         since: values.get('--since'),
+        sourceId: values.get('--source-id'),
         stateRoot: requiredFlag(values, '--state-root'),
         gbrainCli,
       }));
@@ -122,6 +126,7 @@ async function main(): Promise<void> {
         fact: requiredFlag(values, '--fact'),
         provenance: requiredFlag(values, '--provenance'),
         entity: values.get('--entity'),
+        sourceId: values.get('--source-id'),
         stateRoot: requiredFlag(values, '--state-root'),
         gbrainCli,
       }));
@@ -162,7 +167,7 @@ async function main(): Promise<void> {
       return;
     }
     default:
-      throw new Error(`Unknown command: ${command}\n\n${HELP}`);
+      throw new Error(`Unknown command: ${command}\n\n${WORKFLOW_HELP}`);
   }
 }
 

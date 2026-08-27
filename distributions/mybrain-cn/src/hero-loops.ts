@@ -19,6 +19,7 @@ export interface LoopOptions {
   stateRoot: string;
   query: string;
   gbrainCli?: string;
+  sourceId?: string;
   since?: string;
   entity?: string;
   now?: Date;
@@ -31,6 +32,7 @@ type PresentedEvidence = {
   excerpt: string;
   source: string;
   provenance: string | null;
+  visibility: string | null;
   fact: string;
   freshness: EvidenceReference['freshness'];
   current: boolean;
@@ -44,6 +46,7 @@ function present(item: EvidenceReference): PresentedEvidence {
     excerpt: item.excerpt,
     source: item.source,
     provenance: item.provenance,
+    visibility: item.visibility,
     fact: item.excerpt,
     freshness: item.freshness,
     current: item.current,
@@ -70,11 +73,15 @@ export function buildMeetingPrep(options: LoopOptions) {
     stateRoot: options.stateRoot,
     query: options.query,
     gbrainCli: options.gbrainCli,
+    sourceId: options.sourceId,
     entity: options.entity,
     now: options.now,
     caller: options.caller,
   });
-  const known = workflow.evidence.filter((item) => item.current && item.claimable).slice(0, 6).map(present);
+  const known = workflow.evidence
+    .filter((item) => item.record_type === 'result' && item.current && item.claimable)
+    .slice(0, 5)
+    .map(present);
   const commitments = byKind(workflow.evidence, 'commitment');
   const decisions = byKind(workflow.evidence, 'decision');
   const changes = workflow.evidence
@@ -112,6 +119,7 @@ export function buildProjectBrief(options: LoopOptions) {
     stateRoot: options.stateRoot,
     query: options.query,
     gbrainCli: options.gbrainCli,
+    sourceId: options.sourceId,
     entity: options.entity,
     now: options.now,
     caller: options.caller,
@@ -159,6 +167,7 @@ export function buildWeeklyEvolution(options: LoopOptions) {
     query: options.query,
     since: options.since,
     gbrainCli: options.gbrainCli,
+    sourceId: options.sourceId,
     now: options.now,
     caller: options.caller,
   });
@@ -176,7 +185,7 @@ export function buildWeeklyEvolution(options: LoopOptions) {
     evidence: workflow.evidence,
     sources: workflow.sources,
     unknowns: workflow.unknowns,
-    next_move: workflow.evidence.length === 0
+    next_move: workflow.claims.length === 0
       ? '确认本周是否有未导入的决定、承诺或纠正，不要把空检索解释成没有变化。'
       : '选择一个已改变的判断、一个仍缺证据的判断，并明确下周要改变的一项行为。',
     retrieval: workflow.retrieval,
@@ -194,10 +203,15 @@ export function recordCorrection(options: {
   provenance: string;
   entity?: string;
   gbrainCli?: string;
+  sourceId?: string;
   caller?: VerbCaller;
 }): CorrectionReceipt {
   const caller = options.caller ?? callVerb;
-  const runtime = { stateRoot: options.stateRoot, gbrainCli: options.gbrainCli };
+  const runtime = {
+    stateRoot: options.stateRoot,
+    gbrainCli: options.gbrainCli,
+    sourceId: options.sourceId,
+  };
   const write = caller('remember', {
     fact: options.fact,
     provenance: options.provenance,
@@ -213,21 +227,17 @@ export function recordCorrection(options: {
   const readBack = caller('recall', recallParams, runtime);
   const target = normalizedFact(options.fact);
   const expectedId = typeof write.id === 'string' || typeof write.id === 'number' ? String(write.id) : null;
+  if (!expectedId) {
+    throw new Error('Correction write completed without a fact id; read-back identity cannot be verified.');
+  }
   const candidates = asRecordArray(readBack.facts).filter((item) => {
     const fact = typeof item.fact === 'string' ? normalizedFact(item.fact) : '';
     if (!fact) return false;
-    return fact === target || fact.includes(target);
+    return fact === target;
   });
-  const matched = expectedId
-    ? candidates.find((item) => {
-      const id = typeof item.fact_id === 'string'
-        ? item.fact_id
-        : typeof item.id === 'number' || typeof item.id === 'string'
-          ? String(item.id)
-          : null;
-      return id === expectedId;
-    })
-    : candidates[0];
+  const matched = candidates.find((item) => (
+    typeof item.fact_id === 'string' && item.fact_id === expectedId
+  ));
   if (!matched) {
     throw new Error('Correction write completed, but a fresh recall did not verify the corrected fact.');
   }
@@ -235,11 +245,7 @@ export function recordCorrection(options: {
     ...write,
     verification: {
       verified: true,
-      fact_id: typeof matched.fact_id === 'string'
-        ? matched.fact_id
-        : typeof matched.id === 'number' || typeof matched.id === 'string'
-          ? String(matched.id)
-          : null,
+      fact_id: matched.fact_id as string,
       provenance: typeof matched.provenance === 'string' ? matched.provenance : options.provenance,
     },
   };

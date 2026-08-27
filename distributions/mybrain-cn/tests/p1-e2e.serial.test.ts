@@ -113,7 +113,12 @@ describe('P1 native bootstrap, activation, first loop, correction, and recovery'
       gbrainCli,
     });
     expect(receipt.synced).toBe(true);
-    const prep = buildMeetingPrep({ stateRoot, query: '北辰项目 试点范围 数据权限', gbrainCli });
+    const prep = buildMeetingPrep({
+      stateRoot,
+      sourceId: 'workspace',
+      query: '北辰项目 试点范围 数据权限',
+      gbrainCli,
+    });
     expect(prep.known.length).toBeGreaterThan(0);
     expect(JSON.stringify(prep.known)).toContain('北辰');
     expect(prep.unknowns.length).toBeGreaterThan(0);
@@ -143,6 +148,7 @@ describe('P1 native bootstrap, activation, first loop, correction, and recovery'
       fact: correction,
       provenance: 'synthetic P1 correction fixture',
       entity: '北辰项目',
+      sourceId: 'workspace',
       gbrainCli,
     });
     expect(['inserted', 'superseded', 'duplicate']).toContain(write.status as string);
