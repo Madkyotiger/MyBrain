@@ -30,7 +30,11 @@ type PresentedEvidence = {
   title: string;
   excerpt: string;
   source: string;
+  provenance: string | null;
+  fact: string;
   freshness: EvidenceReference['freshness'];
+  current: boolean;
+  claimable: boolean;
 };
 
 function present(item: EvidenceReference): PresentedEvidence {
@@ -39,12 +43,16 @@ function present(item: EvidenceReference): PresentedEvidence {
     title: item.title,
     excerpt: item.excerpt,
     source: item.source,
+    provenance: item.provenance,
+    fact: item.excerpt,
     freshness: item.freshness,
+    current: item.current,
+    claimable: item.claimable,
   };
 }
 
 function byKind(items: EvidenceReference[], kind: EvidenceKind): PresentedEvidence[] {
-  return items.filter((item) => item.current && item.kind === kind).map(present);
+  return items.filter((item) => item.current && item.claimable && item.kind === kind).map(present);
 }
 
 function qualityReceipt(claims: Array<{ evidence_ids: string[] }>) {
@@ -52,7 +60,7 @@ function qualityReceipt(claims: Array<{ evidence_ids: string[] }>) {
   return {
     grounded_claims: claims.length - unboundClaims,
     unbound_claims: unboundClaims,
-    claim_grounding_rate: claims.length === 0 ? 1 : (claims.length - unboundClaims) / claims.length,
+    claim_grounding_rate: claims.length === 0 ? null : (claims.length - unboundClaims) / claims.length,
   };
 }
 
@@ -66,11 +74,11 @@ export function buildMeetingPrep(options: LoopOptions) {
     now: options.now,
     caller: options.caller,
   });
-  const known = workflow.evidence.filter((item) => item.current).slice(0, 6).map(present);
+  const known = workflow.evidence.filter((item) => item.current && item.claimable).slice(0, 6).map(present);
   const commitments = byKind(workflow.evidence, 'commitment');
   const decisions = byKind(workflow.evidence, 'decision');
   const changes = workflow.evidence
-    .filter((item) => item.current && (item.kind === 'correction' || item.kind === 'signal'))
+    .filter((item) => item.current && item.claimable && (item.kind === 'correction' || item.kind === 'signal'))
     .map(present);
 
   return {
@@ -108,13 +116,13 @@ export function buildProjectBrief(options: LoopOptions) {
     now: options.now,
     caller: options.caller,
   });
-  const currentTruth = workflow.evidence.filter((item) => item.current).slice(0, 8).map(present);
+  const currentTruth = workflow.evidence.filter((item) => item.current && item.claimable).slice(0, 8).map(present);
   const decisions = byKind(workflow.evidence, 'decision');
   const commitments = byKind(workflow.evidence, 'commitment');
   const signals = byKind(workflow.evidence, 'signal');
   const corrections = byKind(workflow.evidence, 'correction');
   const objective = workflow.evidence.find((item) => (
-    item.current && /(?:目标|成功条件|objective|success condition)/i.test(item.excerpt)
+    item.current && item.claimable && /(?:目标|成功条件|objective|success condition)/i.test(item.excerpt)
   ));
 
   return {
@@ -197,14 +205,29 @@ export function recordCorrection(options: {
     kind: 'belief',
     visibility: 'world',
   }, runtime);
-  const recallParams = { grep: options.fact, limit: 20 };
+  const recallParams = {
+    grep: options.fact,
+    ...(options.entity ? { entity: options.entity } : {}),
+    limit: 20,
+  };
   const readBack = caller('recall', recallParams, runtime);
   const target = normalizedFact(options.fact);
-  const matched = asRecordArray(readBack.facts).find((item) => {
+  const expectedId = typeof write.id === 'string' || typeof write.id === 'number' ? String(write.id) : null;
+  const candidates = asRecordArray(readBack.facts).filter((item) => {
     const fact = typeof item.fact === 'string' ? normalizedFact(item.fact) : '';
     if (!fact) return false;
     return fact === target || fact.includes(target);
   });
+  const matched = expectedId
+    ? candidates.find((item) => {
+      const id = typeof item.fact_id === 'string'
+        ? item.fact_id
+        : typeof item.id === 'number' || typeof item.id === 'string'
+          ? String(item.id)
+          : null;
+      return id === expectedId;
+    })
+    : candidates[0];
   if (!matched) {
     throw new Error('Correction write completed, but a fresh recall did not verify the corrected fact.');
   }

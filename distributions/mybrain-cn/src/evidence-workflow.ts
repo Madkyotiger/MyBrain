@@ -22,6 +22,7 @@ export interface EvidenceReference {
   observed_at: string | null;
   freshness: EvidenceFreshness;
   current: boolean;
+  claimable: boolean;
   match_reason: string | null;
   query_slot: string;
 }
@@ -148,6 +149,7 @@ function classifyEvidence(record: RecordLike): EvidenceKind {
   const kind = firstString(record, ['kind', 'type', 'page_type'])?.toLowerCase() ?? '';
   const slug = firstString(record, ['slug', 'provenance'])?.toLowerCase() ?? '';
   const provenance = firstString(record, ['provenance'])?.toLowerCase() ?? '';
+  const text = firstString(record, ['fact', 'text', 'chunk', 'summary', 'title'])?.toLowerCase() ?? '';
 
   if (kind === 'commitment' || slug.startsWith('commitments/')) return 'commitment';
   if (kind === 'decision' || slug.startsWith('decisions/')) return 'decision';
@@ -157,7 +159,9 @@ function classifyEvidence(record: RecordLike): EvidenceKind {
     || slug.startsWith('corrections/')
     || provenance.includes('correction')
     || provenance.includes('纠正')
+    || /(?:纠正|更正|修正|(?:已|现已|现在)改为|不再|已不是|不是.+而是|supersed)/i.test(text)
   ) return 'correction';
+  if (/(?:已决定|决定为|decision)/i.test(text)) return 'decision';
   return 'context';
 }
 
@@ -174,20 +178,21 @@ function evidenceFreshness(record: RecordLike, now: Date): EvidenceFreshness {
   }
   const validUntil = parseDate(firstString(record, ['valid_until', 'valid_to', 'expires_at']));
   if (validUntil !== null && validUntil < now.getTime()) return 'possibly_stale';
-  if (firstString(record, ['updated_at', 'observed_at', 'effective_at', 'created_at', 'recorded_at'])) {
+  if (firstString(record, ['updated_at', 'observed_at', 'effective_at', 'created_at', 'recorded_at', 'valid_from', 'date'])) {
     return 'current';
   }
   return 'unknown';
 }
 
 function normalizeEvidence(record: RecordLike, slot: string, now: Date): EvidenceReference | null {
-  const excerpt = compactText(firstString(record, ['chunk', 'fact', 'text', 'summary', 'title']) ?? '');
+  const substantive = firstString(record, ['chunk', 'fact', 'text', 'summary']);
+  const excerpt = compactText(substantive ?? firstString(record, ['title']) ?? '');
   if (!excerpt) return null;
   const title = compactText(firstString(record, ['title', 'entity_title', 'slug', 'fact']) ?? '未命名证据');
   const source = firstString(record, ['slug', 'provenance', 'source_id']) ?? 'unknown';
   const provenance = firstString(record, ['provenance']);
   const factId = firstString(record, ['fact_id', 'id']);
-  const observedAt = firstString(record, ['updated_at', 'observed_at', 'effective_at', 'created_at', 'recorded_at']);
+  const observedAt = firstString(record, ['updated_at', 'observed_at', 'effective_at', 'created_at', 'recorded_at', 'valid_from', 'date']);
   const freshness = evidenceFreshness(record, now);
   const evidenceId = stableId('ev', [factId, source, excerpt]);
 
@@ -202,6 +207,7 @@ function normalizeEvidence(record: RecordLike, slot: string, now: Date): Evidenc
     observed_at: observedAt,
     freshness,
     current: freshness !== 'superseded' && freshness !== 'possibly_stale',
+    claimable: substantive !== null,
     match_reason: firstString(record, ['evidence', 'match_reason']),
     query_slot: slot,
   };
@@ -264,7 +270,7 @@ function buildUnknowns(workflow: EvidenceWorkflowName, coverage: EvidenceCoverag
 
 function claimsFromEvidence(items: EvidenceReference[]): GroundedClaim[] {
   return items
-    .filter((item) => item.current)
+    .filter((item) => item.current && item.claimable)
     .slice(0, 20)
     .map((item) => ({
       claim_id: stableId('claim', [item.evidence_id, item.excerpt]),
@@ -331,7 +337,14 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
     since = normalizedSince(options, now);
     run('delta', { since, budget_tokens: 2600 }, 'delta', `delta:${since}`);
     if (envelopes.length < maxCalls) {
-      run('recall', { query, limit: 8, budget_tokens: 1600 }, 'standing-context', query);
+      const changedPages = asRecordArray(envelopes[0]?.pages)
+        .map((page) => firstString(page, ['title', 'slug']))
+        .filter((value): value is string => value !== null)
+        .slice(0, 3);
+      const standingQuery = changedPages.length > 0
+        ? queryWithSuffix(query, changedPages.join(' '))
+        : query;
+      run('recall', { query: standingQuery, limit: 8, budget_tokens: 1600 }, 'standing-context', standingQuery);
     }
   } else {
     run('recall', {
@@ -340,7 +353,7 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
       limit: 8,
       budget_tokens: 1800,
     }, 'primary', query);
-    let currentCoverage = coverageFor(dedupeEvidence(evidence));
+    let currentCoverage = coverageFor(dedupeEvidence(evidence).filter((item) => item.current && item.claimable));
     for (const slot of RECALL_SLOTS[options.workflow]) {
       if (envelopes.length >= maxCalls) break;
       if (!slot.needed(currentCoverage)) continue;
@@ -351,12 +364,12 @@ export function collectEvidenceWorkflow(options: EvidenceWorkflowOptions): Evide
         limit: 6,
         budget_tokens: 1200,
       }, slot.name, expandedQuery);
-      currentCoverage = coverageFor(dedupeEvidence(evidence));
+      currentCoverage = coverageFor(dedupeEvidence(evidence).filter((item) => item.current && item.claimable));
     }
   }
 
   const finalEvidence = dedupeEvidence(evidence);
-  const coverage = coverageFor(finalEvidence.filter((item) => item.current));
+  const coverage = coverageFor(finalEvidence.filter((item) => item.current && item.claimable));
   const droppedCount = envelopes.reduce(
     (sum, envelope) => sum + (typeof envelope.dropped_count === 'number' ? envelope.dropped_count : 0),
     0,

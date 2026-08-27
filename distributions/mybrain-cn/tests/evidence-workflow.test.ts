@@ -19,7 +19,6 @@ function workflowCaller(seen: SeenCall[]): VerbCaller {
           {
             slug: 'decisions/2026-08-25-scope',
             title: '试点范围决定',
-            text: '已决定先在单一业务单元试点。',
             updated_at: '2026-08-25T09:00:00Z',
           },
         ],
@@ -45,6 +44,20 @@ function workflowCaller(seen: SeenCall[]): VerbCaller {
     }
 
     const query = String(params.query ?? '');
+    if (query.includes('试点范围决定')) {
+      return {
+        protocol_version: 1,
+        results: [
+          {
+            slug: 'decisions/2026-08-25-scope',
+            title: '试点范围决定',
+            chunk: '已决定先在单一业务单元试点。',
+            evidence: 'keyword_exact',
+          },
+        ],
+        facts: [],
+      };
+    }
     if (query.includes('承诺')) {
       return {
         protocol_version: 1,
@@ -145,6 +158,50 @@ describe('MyBrain evidence workflow kernel', () => {
     expect(result.retrieval.coverage.commitment).toBe(1);
   });
 
+  test('adaptive retrieval stops after one call when primary evidence already covers the workflow', () => {
+    const seen: SeenCall[] = [];
+    const caller: VerbCaller = (verb, params) => {
+      seen.push({ verb, params });
+      return {
+        protocol_version: 1,
+        results: [
+          {
+            slug: 'briefs/complete',
+            title: '完整背景',
+            chunk: '项目目标是四周内完成试点。',
+          },
+          {
+            slug: 'decisions/complete',
+            title: '范围决定',
+            chunk: '已决定先在单一业务单元试点。',
+          },
+          {
+            slug: 'signals/complete',
+            title: '权限风险',
+            chunk: '数据权限仍可能延迟启动。',
+          },
+        ],
+        facts: [
+          {
+            fact_id: 'commitment-complete',
+            fact: '王宁承诺周五提交权限清单。',
+            kind: 'commitment',
+            provenance: 'meeting/complete',
+          },
+        ],
+      };
+    };
+    const result = buildMeetingPrep({
+      stateRoot: '/tmp/state',
+      query: '北辰项目',
+      caller,
+      now: new Date('2026-08-27T00:00:00Z'),
+    });
+    expect(seen).toHaveLength(1);
+    expect(result.retrieval.calls).toBe(1);
+    expect(result.quality.unbound_claims).toBe(0);
+  });
+
   test('project brief and weekly evolution share the grounded evidence contract', () => {
     const projectSeen: SeenCall[] = [];
     const project = buildProjectBrief({
@@ -172,6 +229,7 @@ describe('MyBrain evidence workflow kernel', () => {
     expect(weekly.commitments).toHaveLength(1);
     expect(weekly.corrections).toHaveLength(1);
     expect(weekly.quality.unbound_claims).toBe(0);
+    expect(weekly.claims.some((claim) => claim.text === '试点范围决定')).toBe(false);
   });
 
   test('empty evidence remains an explicit unknown instead of a fabricated answer', () => {
@@ -186,6 +244,28 @@ describe('MyBrain evidence workflow kernel', () => {
     expect(result.claims).toEqual([]);
     expect(result.unknowns).toContain('未找到足够的当前背景材料。');
     expect(result.unknowns).toContain('未找到带负责人或期限的当前承诺。');
+  });
+
+  test('correction refuses a read-back that returns a different fact id', () => {
+    const caller: VerbCaller = (verb) => verb === 'remember'
+      ? { protocol_version: 1, id: '42', status: 'superseded' }
+      : {
+        protocol_version: 1,
+        facts: [
+          {
+            fact_id: '41',
+            fact: '北辰项目试点范围已经改为单一业务单元。',
+            provenance: '旧记录',
+          },
+        ],
+      };
+    expect(() => recordCorrection({
+      stateRoot: '/tmp/state',
+      fact: '北辰项目试点范围已经改为单一业务单元。',
+      provenance: '用户纠正 2026-08-27',
+      entity: '北辰项目',
+      caller,
+    })).toThrow('did not verify');
   });
 
   test('correction reports success only after a fresh recall verifies it', () => {
