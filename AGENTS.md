@@ -51,20 +51,12 @@ not invent a separate onboarding flow.
 
 ## Read this order
 
-1. `./AGENTS.md` (this file) — install + operating protocol.
-2. [`./CLAUDE.md`](./CLAUDE.md) — orientation + resolver: architecture, cross-cutting
-   invariants, the reference map, inline ship rules. It routes to on-demand detail docs:
-   [`./docs/architecture/KEY_FILES.md`](./docs/architecture/KEY_FILES.md) (per-file index —
-   read a file's entry before editing it), [`./docs/TESTING.md`](./docs/TESTING.md) (test
-   tiers + isolation lint + E2E lifecycle), and
-   [`./docs/architecture/thin-client.md`](./docs/architecture/thin-client.md) (remote-MCP seam).
-3. [`./docs/architecture/brains-and-sources.md`](./docs/architecture/brains-and-sources.md)
-   — the two-axis mental model (brain = which DB, source = which repo in the DB). Every
-   query routes on both axes. Read before writing anything that touches brain ops.
-4. [`./skills/conventions/brain-routing.md`](./skills/conventions/brain-routing.md) —
-   agent-facing decision table: when to switch brain, when to switch source, how
-   cross-brain federation works (latent-space only; the agent decides).
-5. [`./skills/RESOLVER.md`](./skills/RESOLVER.md) — skill dispatcher. Read before any task.
+Start with the [skill dispatcher](./skills/RESOLVER.md), then follow the path for your task.
+
+- **Install or deploy**: use the product deployment, identity bootstrap, connection or install path above, according to the requested outcome.
+- **Change code**: consult the cross-cutting invariants and reference map in [CLAUDE.md](./CLAUDE.md), then the relevant file's entry in [KEY_FILES.md](./docs/architecture/KEY_FILES.md) before editing. For tests, use [TESTING.md](./docs/TESTING.md). For the remote MCP boundary, read [thin-client.md](./docs/architecture/thin-client.md).
+- **Change brain operations or routing**: read [brains and sources](./docs/architecture/brains-and-sources.md) and the [routing decision table](./skills/conventions/brain-routing.md) before writing. The brain selects the database; the source selects the repository in that database.
+- **Ship a change**: follow [Before shipping](#before-shipping), including the release rules in [CLAUDE.md](./CLAUDE.md) and [RELEASING.md](./docs/RELEASING.md).
 
 ## Trust boundary (critical)
 
